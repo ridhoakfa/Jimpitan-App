@@ -1,20 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { promptInstall, canInstall, isInstalled, getInstallInstructions } from '../utils/pwa';
+import { promptInstall, isInstalled, getInstallInstructions } from '../utils/pwa';
 import { useToast } from '../hooks/useToast';
 
-// Key untuk localStorage
 const INSTALL_DISMISS_KEY = 'jimpitan_install_dismissed';
-const INSTALL_DISMISS_TIMEOUT = 24 * 60 * 60 * 1000; // 24 jam
+const INSTALL_DISMISS_TIMEOUT = 24 * 60 * 60 * 1000;
 
 export default function InstallPrompt() {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
+  const [installSupported, setInstallSupported] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const [installing, setInstalling] = useState(false);
-  const [hasInstallPrompt, setHasInstallPrompt] = useState(false); // true jika event beforeinstallprompt pernah muncul
   const toast = useToast();
   const installTimeoutRef = useRef(null);
 
-  // Cek apakah user sudah pernah dismiss dalam 24 jam terakhir
   const isDismissedRecently = () => {
     const dismissed = localStorage.getItem(INSTALL_DISMISS_KEY);
     if (!dismissed) return false;
@@ -25,7 +23,7 @@ export default function InstallPrompt() {
       }
       localStorage.removeItem(INSTALL_DISMISS_KEY);
       return false;
-    } catch (e) {
+    } catch {
       localStorage.removeItem(INSTALL_DISMISS_KEY);
       return false;
     }
@@ -35,160 +33,101 @@ export default function InstallPrompt() {
     localStorage.setItem(INSTALL_DISMISS_KEY, JSON.stringify({ timestamp: Date.now() }));
   };
 
-  // Reset dismiss (untuk testing)
-  const resetDismiss = () => {
-    localStorage.removeItem(INSTALL_DISMISS_KEY);
-  };
-
   useEffect(() => {
-    // Jika sudah terinstall, tidak tampilkan
-    if (isInstalled()) {
-      return;
-    }
+    if (isInstalled()) return;
+    if (isDismissedRecently()) return;
 
-    // Jika baru dismiss, tidak tampilkan
-    if (isDismissedRecently()) {
-      return;
-    }
-
-    // ============================================================
-    // LISTENER UNTUK beforeinstallprompt (PWA install event)
-    // ============================================================
     const handleBeforeInstallPrompt = (e) => {
-      // Mencegah default agar event tetap bisa digunakan
       e.preventDefault();
-      // Set flag bahwa browser support PWA install
-      setHasInstallPrompt(true);
-      // Tampilkan banner install
-      setShowPrompt(true);
+      setInstallSupported(true);
+      setShowBanner(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // ============================================================
-    // FALLBACK: Jika dalam 3 detik tidak ada beforeinstallprompt,
-    // berarti browser tidak support PWA, tampilkan instruksi manual
-    // ============================================================
-    const fallbackTimeout = setTimeout(() => {
-      if (!hasInstallPrompt && !isInstalled()) {
-        // Browser tidak support PWA, tampilkan instruksi manual
-        setShowInstructions(true);
+    // Jika dalam 2 detik tidak ada event, berarti tidak support PWA
+    const timeout = setTimeout(() => {
+      if (!installSupported) {
+        setShowManual(true);
       }
-    }, 3000);
-
-    // ============================================================
-    // CEK INSTALL STATUS AWAL (jika sudah terinstall dari sebelumnya)
-    // ============================================================
-    if (isInstalled()) {
-      setShowPrompt(false);
-      setShowInstructions(false);
-    }
+    }, 2000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      clearTimeout(fallbackTimeout);
-      if (installTimeoutRef.current) {
-        clearTimeout(installTimeoutRef.current);
-      }
+      clearTimeout(timeout);
     };
   }, []);
 
-  // Listener untuk event appinstalled (jika user install dari browser)
   useEffect(() => {
     const handleAppInstalled = () => {
-      setShowPrompt(false);
+      setShowBanner(false);
       setInstalling(false);
       setDismissed();
       toast.success('✅ Aplikasi berhasil diinstall!');
     };
-
     window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
+    return () => window.removeEventListener('appinstalled', handleAppInstalled);
   }, [toast]);
 
   const handleInstall = async () => {
-    // Jika tidak ada event beforeinstallprompt, tidak bisa install otomatis
-    if (!hasInstallPrompt) {
-      setShowPrompt(false);
-      setShowInstructions(true);
-      toast.info('Browser tidak mendukung install otomatis. Silakan install manual.');
+    if (!installSupported) {
+      setShowBanner(false);
+      setShowManual(true);
       return;
     }
 
     setInstalling(true);
 
-    // Timeout 30 detik
     const timeoutPromise = new Promise((_, reject) => {
-      installTimeoutRef.current = setTimeout(() => {
-        reject(new Error('Install timeout'));
-      }, 30000);
+      installTimeoutRef.current = setTimeout(() => reject(new Error('timeout')), 30000);
     });
 
     try {
       const result = await Promise.race([promptInstall(), timeoutPromise]);
-
-      if (installTimeoutRef.current) {
-        clearTimeout(installTimeoutRef.current);
-        installTimeoutRef.current = null;
-      }
+      clearTimeout(installTimeoutRef.current);
 
       if (result === true) {
-        setShowPrompt(false);
+        setShowBanner(false);
         setDismissed();
         toast.success('✅ Aplikasi berhasil diinstall!');
       } else {
-        // User membatalkan
-        setShowPrompt(false);
+        setShowBanner(false);
         setDismissed();
-        setShowInstructions(true);
-        toast.info('Install dibatalkan. Anda bisa install manual melalui menu browser.');
+        setShowManual(true);
+        toast.info('Install dibatalkan. Anda bisa install manual dari menu browser.');
       }
     } catch (error) {
-      console.error('Install error:', error);
-
-      if (installTimeoutRef.current) {
-        clearTimeout(installTimeoutRef.current);
-        installTimeoutRef.current = null;
-      }
-
-      setShowPrompt(false);
+      console.warn('Install error:', error);
+      clearTimeout(installTimeoutRef.current);
+      setShowBanner(false);
       setDismissed();
-      setShowInstructions(true);
-      toast.error('Gagal install otomatis. Silakan coba manual melalui menu browser.');
+      setShowManual(true);
+      // TIDAK ADA TOAST ERROR DI SINI — hanya tampilkan manual
     } finally {
       setInstalling(false);
     }
   };
 
-  const handleShowInstructions = () => {
-    setShowPrompt(false);
-    setShowInstructions(true);
+  const handleShowManual = () => {
+    setShowBanner(false);
+    setShowManual(true);
   };
 
-  const handleDismiss = () => {
-    setShowPrompt(false);
+  const handleDismissBanner = () => {
+    setShowBanner(false);
     setDismissed();
   };
 
-  const handleCloseInstructions = () => {
-    setShowInstructions(false);
+  const handleCloseManual = () => {
+    setShowManual(false);
   };
 
-  // Expose reset function ke window untuk debugging
-  useEffect(() => {
-    window.resetInstallPrompt = resetDismiss;
-  }, []);
-
-  // Jika sudah terinstall atau dismiss, tidak tampilkan
   if (isInstalled() || isDismissedRecently()) {
     return null;
   }
 
-  // Jika tidak ada prompt dan tidak ada instruksi, return null
-  if (!showPrompt && !showInstructions) {
+  // Jika tidak support dan belum muncul manual, tunggu
+  if (!installSupported && !showManual) {
     return null;
   }
 
@@ -196,8 +135,7 @@ export default function InstallPrompt() {
 
   return (
     <>
-      {/* Install Prompt Banner */}
-      {showPrompt && (
+      {showBanner && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-red-600/80 to-red-700/80 backdrop-blur-xl text-white p-3 sm:p-4 shadow-2xl z-50 animate-slide-in border-t border-white/20">
           <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
@@ -214,7 +152,7 @@ export default function InstallPrompt() {
 
             <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
               <button
-                onClick={handleShowInstructions}
+                onClick={handleShowManual}
                 className="flex-1 sm:flex-none px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-white/20 rounded-lg transition-colors"
               >
                 Cara Install
@@ -237,7 +175,7 @@ export default function InstallPrompt() {
                 )}
               </button>
               <button
-                onClick={handleDismiss}
+                onClick={handleDismissBanner}
                 className="p-2 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
                 aria-label="Tutup"
               >
@@ -250,8 +188,7 @@ export default function InstallPrompt() {
         </div>
       )}
 
-      {/* Instructions Modal */}
-      {showInstructions && (
+      {showManual && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] flex items-end sm:items-center justify-center p-3 sm:p-4">
           <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-md w-full p-4 sm:p-6 animate-scale-in max-h-[90vh] sm:max-h-none overflow-y-auto sm:overflow-visible border border-white/30 dark:border-gray-700/30">
             <div className="flex items-start justify-between mb-4">
@@ -271,7 +208,7 @@ export default function InstallPrompt() {
                 </div>
               </div>
               <button
-                onClick={handleCloseInstructions}
+                onClick={handleCloseManual}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,16 +232,16 @@ export default function InstallPrompt() {
 
             <div className="flex gap-2 sm:gap-3 flex-col sm:flex-row">
               <button
-                onClick={handleCloseInstructions}
+                onClick={handleCloseManual}
                 className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                Nanti Saja
+                Tutup
               </button>
-              {hasInstallPrompt && (
+              {installSupported && (
                 <button
                   onClick={async () => {
                     await handleInstall();
-                    handleCloseInstructions();
+                    handleCloseManual();
                   }}
                   className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white font-medium text-sm rounded-lg hover:from-red-700 hover:to-red-800 transition-colors"
                 >
