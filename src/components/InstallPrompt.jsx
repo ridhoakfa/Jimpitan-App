@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { promptInstall, canInstall, isInstalled, getInstallInstructions } from '../utils/pwa';
 import { useToast } from '../hooks/useToast';
 
@@ -10,9 +10,8 @@ export default function InstallPrompt() {
   const [showInstructions, setShowInstructions] = useState(false);
   const [installing, setInstalling] = useState(false);
   const toast = useToast();
-  const installTimeoutRef = useRef(null);
 
-  // Cek apakah user sudah pernah dismiss dalam waktu tertentu (misal 1 jam)
+  // Cek apakah user sudah pernah dismiss dalam 1 jam terakhir
   const isDismissedRecently = () => {
     const dismissed = localStorage.getItem(INSTALL_DISMISS_KEY);
     if (!dismissed) return false;
@@ -34,26 +33,30 @@ export default function InstallPrompt() {
   };
 
   useEffect(() => {
-    // Jika sudah terinstall atau baru saja dismiss, tidak tampilkan
-    if (isInstalled() || isDismissedRecently()) {
+    // Jika sudah terinstall, tidak tampilkan
+    if (isInstalled()) {
       return;
     }
 
+    // Jika baru dismiss, tidak tampilkan
+    if (isDismissedRecently()) {
+      return;
+    }
+
+    // Dengarkan event install available
     const handleInstallAvailable = () => {
       setShowPrompt(true);
     };
 
     window.addEventListener('pwa-install-available', handleInstallAvailable);
 
+    // Cek langsung apakah bisa install
     if (canInstall()) {
       setShowPrompt(true);
     }
 
     return () => {
       window.removeEventListener('pwa-install-available', handleInstallAvailable);
-      if (installTimeoutRef.current) {
-        clearTimeout(installTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -75,45 +78,30 @@ export default function InstallPrompt() {
 
   const handleInstall = async () => {
     setInstalling(true);
-    // Set timeout untuk menghindari stuck
-    const timeoutPromise = new Promise((_, reject) => {
-      installTimeoutRef.current = setTimeout(() => {
-        reject(new Error('Install timeout'));
-      }, 30000); // 30 detik timeout
-    });
-
     try {
-      const result = await Promise.race([promptInstall(), timeoutPromise]);
-      // Jika berhasil atau gagal (result false), kita tetap sembunyikan banner dan beri instruksi jika perlu
+      const result = await promptInstall();
+      // promptInstall mengembalikan true jika user install, false jika cancel
       if (result === true) {
-        // Sukses install
+        // Sukses install — event appinstalled akan menangani sisanya
         setShowPrompt(false);
         setDismissed();
-        toast.success('Aplikasi berhasil diinstall!');
+        // toast akan muncul dari event appinstalled
       } else {
-        // User membatalkan atau gagal
+        // User membatalkan
         setShowPrompt(false);
         setDismissed();
-        // Tampilkan instruksi manual
         setShowInstructions(true);
         toast.info('Install dibatalkan. Anda bisa install manual melalui menu browser.');
       }
     } catch (error) {
-      // Timeout atau error lainnya
+      // Error (misal user tidak memberikan izin atau error lain)
       console.error('Install error:', error);
-      // Jangan langsung hilangkan banner, tapi tampilkan instruksi
-      setInstalling(false); // hentikan spinner
-      setShowInstructions(true);
-      toast.error('Gagal menginstall. Silakan coba manual.');
-      // Kita tetap biarkan banner? Sebaiknya sembunyikan karena sudah muncul instruksi
       setShowPrompt(false);
       setDismissed();
+      setShowInstructions(true);
+      toast.error('Gagal menginstall. Silakan coba manual.');
     } finally {
       setInstalling(false);
-      if (installTimeoutRef.current) {
-        clearTimeout(installTimeoutRef.current);
-        installTimeoutRef.current = null;
-      }
     }
   };
 
@@ -130,7 +118,7 @@ export default function InstallPrompt() {
     setShowInstructions(false);
   };
 
-  // Jika sudah dismiss atau terinstall, tidak tampilkan
+  // Jika sudah terinstall atau baru dismiss, tidak tampilkan
   if (isInstalled() || isDismissedRecently()) {
     return null;
   }
