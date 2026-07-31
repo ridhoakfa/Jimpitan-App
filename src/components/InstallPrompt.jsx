@@ -7,19 +7,16 @@ export default function InstallPrompt() {
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
     if (isInstalled()) {
       return;
     }
 
-    // Listen for install availability
     const handleInstallAvailable = () => {
       setShowPrompt(true);
     };
 
     window.addEventListener('pwa-install-available', handleInstallAvailable);
 
-    // Check if can install immediately
     if (canInstall()) {
       setShowPrompt(true);
     }
@@ -36,7 +33,6 @@ export default function InstallPrompt() {
     if (installed) {
       setShowPrompt(false);
     } else {
-      // Show manual instructions if prompt not available
       setShowInstructions(true);
     }
     
@@ -49,7 +45,6 @@ export default function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    // Remember dismissal for this session
     sessionStorage.setItem('install-prompt-dismissed', 'true');
   };
 
@@ -57,7 +52,6 @@ export default function InstallPrompt() {
     setShowInstructions(false);
   };
 
-  // Don't show if dismissed this session
   if (sessionStorage.getItem('install-prompt-dismissed')) {
     return null;
   }
@@ -80,7 +74,7 @@ export default function InstallPrompt() {
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-base sm:text-lg mb-0.5 sm:mb-1">Install Jimpitan App</h3>
               <p className="text-xs sm:text-sm text-red-100 line-clamp-2">
-                Install aplikasi untuk akses lebih cepat dan bisa digunakan offline!
+                Install aplikasi untuk akses lebih cepat dan praktis!
               </p>
             </div>
           </div>

@@ -25,6 +25,7 @@ function AppContent() {
   const homeNavigateRef = useRef(null);
   const [currentView, setCurrentView] = useState('home');
 
+  // Tutup mobile menu saat route berubah
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
@@ -53,7 +54,6 @@ function AppContent() {
   // ==========================================================
   const navigateToHomeView = (view) => {
     closeMobileMenu();
-    // Kirim state view agar Home bisa mengubah tampilan
     navigate('/', { state: { view } });
   };
 
@@ -67,6 +67,8 @@ function AppContent() {
   const isDashboardPetugasActive = () => {
     return location.pathname === '/dashboard-petugas';
   };
+
+  const isLoginPage = location.pathname === '/login';
 
   const getActiveButtonClass = (view) => {
     const baseClass = "px-3 py-2 rounded-lg font-medium transition-all";
@@ -87,8 +89,11 @@ function AppContent() {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-white via-red-50/20 to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden">
-      {/* Navbar */}
+      {/* ========================================================== */}
+      {/* NAVBAR — Selalu tampil, termasuk di halaman Login */}
+      {/* ========================================================== */}
       <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg shadow-slate-200/50 dark:shadow-none border-b border-slate-200/60 dark:border-gray-700/60 py-3 px-4 md:py-4 md:px-6 flex justify-between items-center flex-shrink-0 relative z-50">
+        {/* Judul Aplikasi */}
         <button
           onClick={() => navigateToHomeView('home')}
           className="font-bold text-lg md:text-xl bg-gradient-to-r from-red-600 to-red-700 dark:from-red-400 dark:to-red-500 text-transparent bg-clip-text hover:from-red-700 hover:to-red-800 transition-all cursor-pointer"
@@ -96,9 +101,10 @@ function AppContent() {
           Jimpitan App
         </button>
 
-        {/* Desktop Menu */}
+        {/* ===== DESKTOP MENU ===== */}
         <div className="hidden md:flex items-center gap-2 text-sm font-medium">
-          {currentUser && (
+          {currentUser ? (
+            // Jika sudah login
             <>
               <button
                 onClick={() => navigateToHomeView('home')}
@@ -112,7 +118,6 @@ function AppContent() {
               >
                 Scan QR
               </button>
-              {/* Menu Tugas Hari Ini */}
               <button
                 onClick={() => { closeMobileMenu(); navigate('/dashboard-petugas'); }}
                 className={getDashboardButtonClass()}
@@ -160,83 +165,73 @@ function AppContent() {
                 </svg>
                 Tutorial
               </button>
-            </>
-          )}
 
-          {isAdmin && (
-            <button
-              onClick={() => navigateToHomeView('config')}
-              className="p-2.5 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-              title="Konfigurasi"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
+              {/* Tombol Konfigurasi (Admin) */}
+              {isAdmin && (
+                <button
+                  onClick={() => navigateToHomeView('config')}
+                  className="p-2.5 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                  title="Konfigurasi"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
 
-          <button
-            onClick={toggleTheme}
-            className="p-2.5 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200"
-            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDark ? (
-              <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-              </svg>
-            )}
-          </button>
-
-          <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-gray-600">
-            {currentUser && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm">
-                  {currentUser.name.charAt(0).toUpperCase()}
+              {/* User Avatar & Logout */}
+              <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-gray-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {currentUser.name}
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {currentUser.name}
-                </span>
+                <button
+                  onClick={handleLogout}
+                  className="p-2.5 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-900/30 dark:to-gray-800/30 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-900/50 dark:hover:to-gray-800/50 text-gray-600 dark:text-gray-400 transition-all hover:shadow-md"
+                  title="Logout"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
               </div>
-            )}
-            {!currentUser ? (
+            </>
+          ) : (
+            // Jika BELUM login (halaman Login)
+            <div className="flex items-center gap-3">
+              {/* Hanya tombol tema dan tombol Login */}
+              <button
+                onClick={toggleTheme}
+                className="p-2.5 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200"
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? (
+                  <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
+                )}
+              </button>
               <button
                 onClick={() => navigate('/login')}
-                className="btn-primary btn-sm"
+                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium rounded-lg shadow-md shadow-red-200/50 dark:shadow-red-900/30 transition-all"
               >
                 Login
               </button>
-            ) : (
-              <button
-                onClick={handleLogout}
-                className="p-2.5 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-900/30 dark:to-gray-800/30 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-900/50 dark:hover:to-gray-800/50 text-gray-600 dark:text-gray-400 transition-all hover:shadow-md"
-                title="Logout"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Mobile Controls */}
+        {/* ===== MOBILE CONTROLS (hanya muncul jika sudah login) ===== */}
         <div className="md:hidden flex items-center gap-2">
-          {isAdmin && currentUser && (
-            <button
-              onClick={() => navigateToHomeView('config')}
-              className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200 text-red-600 dark:text-red-400"
-              title="Konfigurasi"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
-
+          {/* Tombol tema tetap muncul di mobile */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200"
@@ -253,26 +248,44 @@ function AppContent() {
             )}
           </button>
 
-          <button
-            onClick={toggleMobileMenu}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-300 focus:outline-none"
-            aria-label="Toggle menu"
-          >
-            {!isMobileMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          {/* Tombol Config (Admin) di mobile jika login */}
+          {currentUser && isAdmin && (
+            <button
+              onClick={() => navigateToHomeView('config')}
+              className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200 text-red-600 dark:text-red-400"
+              title="Konfigurasi"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
               </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            )}
-          </button>
+            </button>
+          )}
+
+          {/* Tombol hamburger HANYA muncul jika sudah login */}
+          {currentUser && (
+            <button
+              onClick={toggleMobileMenu}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-300 focus:outline-none"
+              aria-label="Toggle menu"
+            >
+              {!isMobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </button>
+          )}
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
+      {/* ========================================================== */}
+      {/* MOBILE MENU OVERLAY — hanya muncul jika login & menu terbuka */}
+      {/* ========================================================== */}
+      {isMobileMenuOpen && currentUser && (
         <>
           <div
             className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
@@ -390,7 +403,9 @@ function AppContent() {
         </>
       )}
 
-      {/* Main Content */}
+      {/* ========================================================== */}
+      {/* MAIN CONTENT */}
+      {/* ========================================================== */}
       <main className="flex-1 flex p-3 md:p-6 overflow-hidden">
         <div className="w-full h-full overflow-auto">
           <Suspense fallback={<LoadingSpinner fullscreen loading text="Memuat halaman..." />}>
@@ -414,8 +429,11 @@ function AppContent() {
         </div>
       </main>
 
+      {/* ========================================================== */}
+      {/* FOOTER — Selalu tampil */}
+      {/* ========================================================== */}
       <footer className="text-center text-xs py-2 md:py-3 text-gray-500 dark:text-gray-400 flex-shrink-0">
-        © Ridho Akbar Fadhilah
+        © 2026 Ridho Akbar Fadhilah
       </footer>
 
       <TutorialModal
