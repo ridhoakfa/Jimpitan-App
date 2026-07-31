@@ -10,6 +10,7 @@ export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [hasInstallPrompt, setHasInstallPrompt] = useState(false); // true jika event beforeinstallprompt pernah muncul
   const toast = useToast();
   const installTimeoutRef = useRef(null);
 
@@ -22,7 +23,6 @@ export default function InstallPrompt() {
       if (Date.now() - timestamp < INSTALL_DISMISS_TIMEOUT) {
         return true;
       }
-      // Jika sudah lebih dari 24 jam, hapus agar bisa muncul lagi
       localStorage.removeItem(INSTALL_DISMISS_KEY);
       return false;
     } catch (e) {
@@ -51,29 +51,49 @@ export default function InstallPrompt() {
       return;
     }
 
-    const handleInstallAvailable = () => {
+    // ============================================================
+    // LISTENER UNTUK beforeinstallprompt (PWA install event)
+    // ============================================================
+    const handleBeforeInstallPrompt = (e) => {
+      // Mencegah default agar event tetap bisa digunakan
+      e.preventDefault();
+      // Set flag bahwa browser support PWA install
+      setHasInstallPrompt(true);
+      // Tampilkan banner install
       setShowPrompt(true);
     };
 
-    window.addEventListener('pwa-install-available', handleInstallAvailable);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Cek apakah browser mendukung install
-    if (canInstall()) {
-      setShowPrompt(true);
-    } else {
-      // Jika tidak support, tampilkan instruksi manual saja
-      setShowInstructions(true);
+    // ============================================================
+    // FALLBACK: Jika dalam 3 detik tidak ada beforeinstallprompt,
+    // berarti browser tidak support PWA, tampilkan instruksi manual
+    // ============================================================
+    const fallbackTimeout = setTimeout(() => {
+      if (!hasInstallPrompt && !isInstalled()) {
+        // Browser tidak support PWA, tampilkan instruksi manual
+        setShowInstructions(true);
+      }
+    }, 3000);
+
+    // ============================================================
+    // CEK INSTALL STATUS AWAL (jika sudah terinstall dari sebelumnya)
+    // ============================================================
+    if (isInstalled()) {
+      setShowPrompt(false);
+      setShowInstructions(false);
     }
 
     return () => {
-      window.removeEventListener('pwa-install-available', handleInstallAvailable);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      clearTimeout(fallbackTimeout);
       if (installTimeoutRef.current) {
         clearTimeout(installTimeoutRef.current);
       }
     };
   }, []);
 
-  // Listener untuk event appinstalled
+  // Listener untuk event appinstalled (jika user install dari browser)
   useEffect(() => {
     const handleAppInstalled = () => {
       setShowPrompt(false);
@@ -90,9 +110,8 @@ export default function InstallPrompt() {
   }, [toast]);
 
   const handleInstall = async () => {
-    // Cek apakah support install
-    if (!canInstall()) {
-      // Jika tidak support, langsung tampilkan instruksi
+    // Jika tidak ada event beforeinstallprompt, tidak bisa install otomatis
+    if (!hasInstallPrompt) {
       setShowPrompt(false);
       setShowInstructions(true);
       toast.info('Browser tidak mendukung install otomatis. Silakan install manual.');
@@ -101,7 +120,7 @@ export default function InstallPrompt() {
 
     setInstalling(true);
 
-    // Timeout 30 detik untuk menghindari stuck
+    // Timeout 30 detik
     const timeoutPromise = new Promise((_, reject) => {
       installTimeoutRef.current = setTimeout(() => {
         reject(new Error('Install timeout'));
@@ -111,7 +130,6 @@ export default function InstallPrompt() {
     try {
       const result = await Promise.race([promptInstall(), timeoutPromise]);
 
-      // Hapus timeout
       if (installTimeoutRef.current) {
         clearTimeout(installTimeoutRef.current);
         installTimeoutRef.current = null;
@@ -122,7 +140,7 @@ export default function InstallPrompt() {
         setDismissed();
         toast.success('✅ Aplikasi berhasil diinstall!');
       } else {
-        // User membatalkan atau browser tidak merespon
+        // User membatalkan
         setShowPrompt(false);
         setDismissed();
         setShowInstructions(true);
@@ -131,13 +149,11 @@ export default function InstallPrompt() {
     } catch (error) {
       console.error('Install error:', error);
 
-      // Hapus timeout
       if (installTimeoutRef.current) {
         clearTimeout(installTimeoutRef.current);
         installTimeoutRef.current = null;
       }
 
-      // Tampilkan instruksi manual
       setShowPrompt(false);
       setDismissed();
       setShowInstructions(true);
@@ -148,7 +164,6 @@ export default function InstallPrompt() {
   };
 
   const handleShowInstructions = () => {
-    // Jika user minta instruksi, sembunyikan banner dan tampilkan modal
     setShowPrompt(false);
     setShowInstructions(true);
   };
@@ -162,9 +177,8 @@ export default function InstallPrompt() {
     setShowInstructions(false);
   };
 
-  // Reset dismiss (untuk testing via console)
+  // Expose reset function ke window untuk debugging
   useEffect(() => {
-    // Expose reset function ke window untuk debugging
     window.resetInstallPrompt = resetDismiss;
   }, []);
 
@@ -286,7 +300,7 @@ export default function InstallPrompt() {
               >
                 Nanti Saja
               </button>
-              {canInstall() && (
+              {hasInstallPrompt && (
                 <button
                   onClick={async () => {
                     await handleInstall();
