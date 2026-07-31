@@ -8,7 +8,6 @@ export default function InstallPrompt() {
   const [installing, setInstalling] = useState(false);
   const toast = useToast();
 
-  // Cek apakah sudah terinstall atau sudah dismiss di session ini
   useEffect(() => {
     if (isInstalled() || sessionStorage.getItem('install-prompt-dismissed') === 'true') {
       return;
@@ -20,6 +19,7 @@ export default function InstallPrompt() {
 
     window.addEventListener('pwa-install-available', handleInstallAvailable);
 
+    // Cek apakah bisa install dan belum pernah dismiss
     if (canInstall()) {
       setShowPrompt(true);
     }
@@ -29,7 +29,6 @@ export default function InstallPrompt() {
     };
   }, []);
 
-  // Listener untuk event appinstalled (jika user install dari browser)
   useEffect(() => {
     const handleAppInstalled = () => {
       setShowPrompt(false);
@@ -46,24 +45,42 @@ export default function InstallPrompt() {
   }, [toast]);
 
   const handleInstall = async () => {
+    // Jika tidak bisa install, langsung tampilkan instruksi
+    if (!canInstall()) {
+      setShowInstructions(true);
+      return;
+    }
+
     setInstalling(true);
+    
+    // Timeout fallback: jika tidak ada response dalam 10 detik, anggap gagal
+    const timeoutId = setTimeout(() => {
+      if (installing) {
+        setInstalling(false);
+        setShowPrompt(false);
+        sessionStorage.setItem('install-prompt-dismissed', 'true');
+        setShowInstructions(true);
+        toast.info('Install dibatalkan. Anda bisa install manual melalui menu browser.');
+      }
+    }, 10000);
+
     try {
       const installed = await promptInstall();
+      clearTimeout(timeoutId);
+      
       if (installed) {
-        // Berhasil install
         setShowPrompt(false);
         sessionStorage.setItem('install-prompt-dismissed', 'true');
         toast.success('Aplikasi berhasil diinstall!');
       } else {
-        // User membatalkan atau gagal
+        // User membatalkan
         setShowPrompt(false);
         sessionStorage.setItem('install-prompt-dismissed', 'true');
-        // Tampilkan instruksi manual sebagai alternatif
         setShowInstructions(true);
         toast.info('Install dibatalkan. Anda bisa install manual melalui menu browser.');
       }
     } catch (error) {
-      // Error saat install
+      clearTimeout(timeoutId);
       console.error('Install error:', error);
       setShowPrompt(false);
       sessionStorage.setItem('install-prompt-dismissed', 'true');
@@ -87,7 +104,6 @@ export default function InstallPrompt() {
     setShowInstructions(false);
   };
 
-  // Jika sudah dismiss atau terinstall, tidak tampilkan
   if (sessionStorage.getItem('install-prompt-dismissed') === 'true' || isInstalled()) {
     return null;
   }

@@ -1,0 +1,24 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirect semua permintaan ke index.html untuk SPA React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Pastikan asset statis (js, css, png, dll) tidak di-redirect
+[[redirects]]
+  from = "/assets/*"
+  to = "/assets/:splat"
+  status = 200
+
+# Pastikan file favicon dan manifest diakses dengan benar
+[[redirects]]
+  from = "/*.png"
+  to = "/:splat.png"
+  status = 200
