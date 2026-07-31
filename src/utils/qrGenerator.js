@@ -1,130 +1,152 @@
 import QRCode from 'qrcode';
 
 /**
- * Generate individual QR card images using canvas rendering (same as QRCard)
- * Each card uses the exact same styling as QRCard download
- * @param {Array} customers - Array of customer objects with {id, nama, blok, qrHash}
- * @param {Function} onProgress - Callback for progress updates (current, total)
+ * Generate individual QR card images using canvas rendering
+ * Dengan logo MITRAWISESA & palet warna Karang Taruna
+ * @param {Array} customers - Array of customer objects
+ * @param {Function} onProgress - Callback for progress
  * @returns {Promise<Array>} Array of {filename, blob} objects
  */
 export async function generateQRCards(customers, onProgress = null) {
   const cards = [];
   const total = customers.length;
 
+  // Load logo sekali di awal (di-cache)
+  const logoImage = await loadLogo();
+
   for (let index = 0; index < customers.length; index++) {
     const customer = customers[index];
     
-    // Report progress
     if (onProgress) {
       onProgress(index + 1, total);
     }
 
     try {
-      // Validate customer data
       if (!customer.nama || !customer.blok || !customer.qrHash) {
         console.warn(`Skipping customer ${customer.id} - missing required fields`);
         continue;
       }
 
-      // Create card canvas (same as QRCard component)
       const cardCanvas = document.createElement('canvas');
       const ctx = cardCanvas.getContext('2d');
       
-      // Card dimensions (portrait orientation)
+      // Ukuran card (potrait)
       cardCanvas.width = 800;
       cardCanvas.height = 1000;
       
-      // Background - Soft gradient
-      const bgGradient = ctx.createLinearGradient(0, 0, 0, cardCanvas.height);
-      bgGradient.addColorStop(0, '#f8fafc');
-      bgGradient.addColorStop(1, '#e0e7ff');
-      ctx.fillStyle = bgGradient;
+      // ============================================
+      // BACKGROUND: PUTIH KREM (#efede1)
+      // ============================================
+      ctx.fillStyle = '#efede1';
       ctx.fillRect(0, 0, cardCanvas.width, cardCanvas.height);
       
-      // Soft rounded border
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 2;
-      ctx.lineJoin = 'round';
-      ctx.strokeRect(30, 30, cardCanvas.width - 60, cardCanvas.height - 60);
-      
-      // Top accent bar - soft gradient
-      const accentGradient = ctx.createLinearGradient(0, 50, 0, 150);
-      accentGradient.addColorStop(0, '#6366f1');
-      accentGradient.addColorStop(1, '#8b5cf6');
-      ctx.fillStyle = accentGradient;
-      ctx.fillRect(50, 50, cardCanvas.width - 100, 8);
-      
-      // Logo/Icon area - soft circle
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(cardCanvas.width / 2, 120, 50, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#e0e7ff';
+      // ============================================
+      // BORDER HITAM TIPIS (#201b19)
+      // ============================================
+      ctx.strokeStyle = '#201b19';
       ctx.lineWidth = 3;
-      ctx.stroke();
+      ctx.strokeRect(20, 20, cardCanvas.width - 40, cardCanvas.height - 40);
       
-      // Logo emoji
-      ctx.font = 'bold 56px Arial';
+      // ============================================
+      // TOP ACCENT BAR: MERAH (#c42a48)
+      // ============================================
+      ctx.fillStyle = '#c42a48';
+      ctx.fillRect(40, 40, cardCanvas.width - 80, 12);
+      
+      // ============================================
+      // LOGO MITRAWISESA (di tengah header)
+      // ============================================
+      if (logoImage) {
+        const logoSize = 100;
+        const logoX = (cardCanvas.width - logoSize) / 2;
+        const logoY = 70;
+        ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+      } else {
+        // Fallback jika logo gagal dimuat
+        ctx.fillStyle = '#201b19';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🏡', cardCanvas.width / 2, 120);
+      }
+      
+      // ============================================
+      // TITLE: "JIMPITAN" (HITAM)
+      // ============================================
+      ctx.fillStyle = '#201b19';
+      ctx.font = 'bold 36px Arial';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🏡', cardCanvas.width / 2, 120);
-      
-      // Title
-      ctx.fillStyle = '#1e293b';
-      ctx.font = 'bold 42px Arial';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText('Jimpitan', cardCanvas.width / 2, 210);
+      ctx.fillText('JIMPITAN', cardCanvas.width / 2, 210);
       
-      // Divider line
-      ctx.strokeStyle = '#e2e8f0';
+      // Subtitle kecil
+      ctx.fillStyle = '#69641e';
+      ctx.font = '18px Arial';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('Karang Taruna Dukuh Mojorejo', cardCanvas.width / 2, 240);
+      
+      // Divider line (kuning redup)
+      ctx.strokeStyle = '#acaa42';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(200, 240);
-      ctx.lineTo(600, 240);
+      ctx.moveTo(150, 260);
+      ctx.lineTo(650, 260);
       ctx.stroke();
       
-      // Customer name - soft card
+      // ============================================
+      // CUSTOMER CARD (PUTIH)
+      // ============================================
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+      ctx.shadowColor = 'rgba(32, 27, 25, 0.1)';
       ctx.shadowBlur = 20;
       ctx.shadowOffsetY = 4;
-      ctx.fillRect(80, 270, cardCanvas.width - 160, 90);
+      ctx.beginPath();
+      ctx.roundRect(60, 280, cardCanvas.width - 120, 90, 12);
+      ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       
-      // Customer name text
-      ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 38px Arial';
+      // Nama Customer (HITAM)
+      ctx.fillStyle = '#201b19';
+      ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText(customer.nama, cardCanvas.width / 2, 315);
       
-      // Blok with icon
-      ctx.fillStyle = '#64748b';
-      ctx.font = '26px Arial';
-      ctx.fillText(`📍 Blok ${customer.blok}`, cardCanvas.width / 2, 350);
+      // RT (Hitam kecoklatan)
+      ctx.fillStyle = '#35300c';
+      ctx.font = '24px Arial';
+      ctx.fillText(`📍 RT ${customer.blok}`, cardCanvas.width / 2, 355);
       
-      // QR Code container - soft shadow
-      const qrSize = 400;
+      // ============================================
+      // QR CODE (dengan logo di tengah)
+      // ============================================
+      const qrSize = 360;
       const qrX = (cardCanvas.width - qrSize) / 2;
       const qrY = 400;
       
+      // Background QR (putih)
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+      ctx.shadowColor = 'rgba(32, 27, 25, 0.15)';
       ctx.shadowBlur = 30;
-      ctx.shadowOffsetY = 8;
-      ctx.fillRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
+      ctx.shadowOffsetY = 6;
+      ctx.beginPath();
+      ctx.roundRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30, 10);
+      ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       
-      // Generate QR code image
+      // Generate QR Code (dengan error correction HIGH agar logo tidak merusak)
       const qrDataUrl = await new Promise((resolve) => {
         QRCode.toDataURL(customer.qrHash, {
           width: 600,
           margin: 2,
+          errorCorrectionLevel: 'H', // HIGH
           color: {
-            dark: '#000000',
-            light: '#FFFFFF'
+            dark: '#201b19',
+            light: '#ffffff'
           }
         }, (error, url) => {
           if (!error) {
@@ -136,31 +158,52 @@ export async function generateQRCards(customers, onProgress = null) {
         });
       });
       
-      // Draw QR code on canvas
       if (qrDataUrl) {
         const qrImage = new Image();
-        qrImage.onerror = () => {
-          console.error('Failed to load QR image');
-        };
         qrImage.src = qrDataUrl;
-        
-        // Wait for image to load then draw
         await new Promise((resolve) => {
           qrImage.onload = () => {
             ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
             
-            // Bottom instruction area - soft background
-            ctx.fillStyle = '#f1f5f9';
-            ctx.fillRect(80, 860, cardCanvas.width - 160, 80);
+            // ============================================
+            // LOGO MITRAWISESA DI TENGAH QR
+            // ============================================
+            if (logoImage) {
+              const logoQrSize = 60;
+              const logoQrX = qrX + (qrSize - logoQrSize) / 2;
+              const logoQrY = qrY + (qrSize - logoQrSize) / 2;
+              // Background putih untuk logo agar kontras
+              ctx.fillStyle = '#ffffff';
+              ctx.beginPath();
+              ctx.arc(logoQrX + logoQrSize/2, logoQrY + logoQrSize/2, logoQrSize/2 + 6, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.drawImage(logoImage, logoQrX, logoQrY, logoQrSize, logoQrSize);
+            }
             
-            // Instruction text
-            ctx.fillStyle = '#475569';
-            ctx.font = '24px Arial';
-            ctx.fillText('Scan QR untuk mencatat', cardCanvas.width / 2, 900);
+            // ============================================
+            // FOOTER (KUNING REDUP)
+            // ============================================
+            ctx.fillStyle = '#acaa42';
+            ctx.shadowColor = 'rgba(32, 27, 25, 0.05)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetY = 2;
+            ctx.beginPath();
+            ctx.roundRect(60, 860, cardCanvas.width - 120, 90, 10);
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
             
-            ctx.font = 'bold 26px Arial';
-            ctx.fillStyle = '#6366f1';
-            ctx.fillText('Jimpitan', cardCanvas.width / 2, 930);
+            // Teks footer
+            ctx.fillStyle = '#201b19';
+            ctx.font = '22px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Scan QR untuk mencatat jimpitan', cardCanvas.width / 2, 895);
+            
+            ctx.fillStyle = '#c42a48';
+            ctx.font = 'bold 28px Arial';
+            ctx.fillText('MITRAWISESA', cardCanvas.width / 2, 935);
             
             resolve();
           };
@@ -171,7 +214,9 @@ export async function generateQRCards(customers, onProgress = null) {
         });
       }
       
-      // Convert canvas to blob
+      // ============================================
+      // SIMPAN SEBAGAI PNG
+      // ============================================
       const blob = await new Promise((resolve) => {
         cardCanvas.toBlob((blob) => {
           resolve(blob);
@@ -179,7 +224,7 @@ export async function generateQRCards(customers, onProgress = null) {
       });
       
       if (blob) {
-        const filename = `Jimpitan_QR_${customer.blok}_${customer.nama}.png`;
+        const filename = `Jimpitan_QR_RT${customer.blok}_${customer.nama}.png`;
         cards.push({
           filename: sanitizeFilename(filename),
           blob
@@ -194,29 +239,60 @@ export async function generateQRCards(customers, onProgress = null) {
 }
 
 /**
+ * Load logo image from public folder
+ */
+function loadLogo() {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      console.warn('Logo MITRAWISESA tidak ditemukan, lanjut tanpa logo');
+      resolve(null);
+    };
+    img.src = '/mitrawisesa.PNG';
+  });
+}
+
+/**
+ * RoundRect polyfill untuk Canvas
+ */
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    if (typeof r === 'number') r = [r];
+    const radii = r.map(v => Math.min(v, Math.min(w, h) / 2));
+    const tl = radii[0] || 0;
+    const tr = radii[1] || tl || 0;
+    const br = radii[2] || tl || 0;
+    const bl = radii[3] || tl || 0;
+    this.moveTo(x + tl, y);
+    this.lineTo(x + w - tr, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + tr);
+    this.lineTo(x + w, y + h - br);
+    this.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+    this.lineTo(x + bl, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - bl);
+    this.lineTo(x, y + tl);
+    this.quadraticCurveTo(x, y, x + tl, y);
+    this.closePath();
+    return this;
+  };
+}
+
+/**
  * Create ZIP file from card images
- * @param {Array} cards - Array of {filename, blob} objects
- * @param {string} zipName - Name of the ZIP file
- * @returns {Promise<Blob>} ZIP blob
  */
 export async function createZipFromCards(cards, zipName = 'qr-codes') {
-  // Dynamically import JSZip
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
-
-  // Add each card to the zip
   for (const card of cards) {
     zip.file(card.filename, card.blob);
   }
-
-  // Generate the zip file
   return await zip.generateAsync({ type: 'blob' });
 }
 
 /**
  * Download ZIP file
- * @param {Blob} blob - ZIP blob
- * @param {string} filename - Output filename
  */
 export function downloadZIP(blob, filename = 'qr-codes.zip') {
   const url = window.URL.createObjectURL(blob);
@@ -230,46 +306,25 @@ export function downloadZIP(blob, filename = 'qr-codes.zip') {
 }
 
 /**
- * Escape HTML special characters
- */
-function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-/**
- * Sanitize filename but preserve .png extension
+ * Sanitize filename
  */
 function sanitizeFilename(filename) {
-  // Separate name and extension
   const lastDot = filename.lastIndexOf('.');
   const name = lastDot > 0 ? filename.substring(0, lastDot) : filename;
   const ext = lastDot > 0 ? filename.substring(lastDot) : '';
-  
-  // Sanitize name only
   const sanitized = name
     .replace(/[^a-z0-9]/gi, '_')
     .replace(/_+/g, '_')
     .toLowerCase();
-  
   return sanitized + ext;
 }
 
 /**
- * Get unique bloks from customers (normalize to string)
- * @param {Array} customers - Array of customer objects
- * @returns {Array} Unique bloks sorted
+ * Get unique bloks
  */
 export function getUniqueBloks(customers) {
   const bloks = [...new Set(customers.map(c => String(c.blok).trim()))];
   return bloks.sort((a, b) => {
-    // Try to sort numerically if both are numbers
     const aNum = parseInt(a, 10);
     const bNum = parseInt(b, 10);
     if (!isNaN(aNum) && !isNaN(bNum)) {

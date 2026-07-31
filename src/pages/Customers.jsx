@@ -156,7 +156,7 @@ export default function Customers({ onBack }) {
     const namaStr = String(formData.nama || '').trim();
     
     if (!blokStr || !namaStr) {
-      toast.error('Blok dan nama harus diisi');
+      toast.error('RT dan nama harus diisi');
       return;
     }
 
@@ -464,7 +464,7 @@ export default function Customers({ onBack }) {
           <div className="flex-1 relative w-full">
             <input
               type="text"
-              placeholder="Cari blok..."
+              placeholder="Cari RT..."
               value={searchBlok}
               onChange={(e) => setSearchBlok(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -570,7 +570,7 @@ export default function Customers({ onBack }) {
                   }`}
                   title={selectedCustomerIds.has(customer.id) ? 'Batal Pilih' : 'Pilih Customer'}
                 >
-                  <div className="text-xs opacity-75 mb-1">Blok {customer.blok || '-'}</div>
+                  <div className="text-xs opacity-75 mb-1">RT {customer.blok || '-'}</div>
                   <div className="text-lg font-bold mb-1">{customer.id || '-'}</div>
                   <div className="text-sm font-semibold">{customer.nama || '-'}</div>
                 </div>
@@ -704,13 +704,13 @@ export default function Customers({ onBack }) {
               {/* Blok Field */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Blok / ID Number <span className="text-red-500">*</span>
+                  RT / ID Wilayah <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.blok}
                   onChange={(e) => setFormData({ ...formData, blok: e.target.value })}
-                  placeholder="Contoh: A-12, B-05, dst"
+                  placeholder="Contoh: RT 1, RT 2, dst"
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   required
                 />
@@ -764,7 +764,7 @@ export default function Customers({ onBack }) {
         title="Hapus Customer"
         message={
           customerToDelete
-            ? `Apakah Anda yakin ingin menghapus customer "${customerToDelete.nama}" (Blok: ${customerToDelete.blok})? Tindakan ini tidak dapat dibatalkan.`
+            ? `Apakah Anda yakin ingin menghapus customer "${customerToDelete.nama}" (RT: ${customerToDelete.blok})? Tindakan ini tidak dapat dibatalkan.`
             : ''
         }
         confirmText="Hapus"

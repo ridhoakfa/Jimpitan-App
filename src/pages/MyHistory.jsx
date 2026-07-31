@@ -31,7 +31,9 @@ export default function MyHistory({ onBack }) {
   const [search, setSearch] = useState('');
   const [sortDesc, setSortDesc] = useState(true);
   const [page, setPage] = useState(1);
-  const [confirmData, setConfirmData] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -45,13 +47,12 @@ export default function MyHistory({ onBack }) {
       setLoading(true);
       setError(null);
       
-      // Set timeout fallback
       const timeoutId = setTimeout(() => {
         if (active) {
           setError('Request timeout - coba refresh halaman');
           setLoading(false);
         }
-      }, 20000); // 20 second timeout
+      }, 20000);
 
       try {
         const res = await getUserTransactions(token);
@@ -63,12 +64,9 @@ export default function MyHistory({ onBack }) {
           throw new Error(res && res.message ? res.message : 'Gagal memuat riwayat');
         }
         
-        // Backend returns { data: { user, transactions, total } }
         const rows = Array.isArray(res.data?.transactions) ? res.data.transactions : 
                      Array.isArray(res.data) ? res.data : [];
         
-        // Defensive normalization: ensure expected fields exist
-        // Backend already filters by user_id for petugas role
         const cleaned = rows.map(r => ({
           txid: String(r.txid || ''),
           timestamp: String(r.timestamp || ''),
@@ -77,7 +75,8 @@ export default function MyHistory({ onBack }) {
           nama: String(r.nama || ''),
           nominal: Number(r.nominal || r.amount || 0),
           user_id: String(r.user_id || ''),
-          petugas: String(r.petugas || currentUser?.name || '')
+          petugas: String(r.petugas || currentUser?.name || ''),
+          type: String(r.type || 'daily')
         }));
         
         setTransactions(cleaned);
@@ -85,7 +84,6 @@ export default function MyHistory({ onBack }) {
         clearTimeout(timeoutId);
         if (!active) return;
         setError(e.message);
-        // Set empty array on error so UI still renders
         setTransactions([]);
       } finally {
         if (active) setLoading(false);
@@ -95,6 +93,63 @@ export default function MyHistory({ onBack }) {
     load();
     return () => { active = false; };
   }, [token]);
+
+  // Handle Delete
+  const handleDeleteClick = (tx) => {
+    setSelectedTransaction(tx);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedTransaction) return;
+    if (!token) {
+      toast.error('Token tidak ditemukan, silakan login ulang');
+      setShowDeleteConfirm(false);
+      return;
+    }
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteTransaction(token, selectedTransaction.txid);
+      if (result.status === 'success') {
+        toast.success('Transaksi berhasil dihapus');
+        setShowDeleteConfirm(false);
+        setSelectedTransaction(null);
+        // Refresh data
+        const res = await getUserTransactions(token);
+        if (res && res.status === 'success') {
+          const rows = Array.isArray(res.data?.transactions) ? res.data.transactions : [];
+          const cleaned = rows.map(r => ({
+            txid: String(r.txid || ''),
+            timestamp: String(r.timestamp || ''),
+            customer_id: String(r.customer_id || ''),
+            blok: String(r.blok || r.id || ''),
+            nama: String(r.nama || ''),
+            nominal: Number(r.nominal || r.amount || 0),
+            user_id: String(r.user_id || ''),
+            petugas: String(r.petugas || currentUser?.name || ''),
+            type: String(r.type || 'daily')
+          }));
+          setTransactions(cleaned);
+        }
+      } else {
+        toast.error(result.message || 'Gagal menghapus transaksi');
+        setShowDeleteConfirm(false);
+      }
+    } catch (err) {
+      toast.error('Terjadi kesalahan saat menghapus');
+      console.error(err);
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setSelectedTransaction(null);
+  };
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -109,7 +164,6 @@ export default function MyHistory({ onBack }) {
       const at = new Date(a.timestamp || 0).getTime();
       const bt = new Date(b.timestamp || 0).getTime();
       if (isNaN(at) || isNaN(bt)) {
-        // Fallback to txid comparison if timestamps invalid
         return sortDesc ? String(b.txid).localeCompare(String(a.txid)) : String(a.txid).localeCompare(String(b.txid));
       }
       return sortDesc ? bt - at : at - bt;
@@ -133,27 +187,6 @@ export default function MyHistory({ onBack }) {
     return { count, totalNominal };
   }, [filtered]);
 
-  const requestDelete = (t) => {
-    setConfirmData({ type: 'delete', transaction: t });
-  };
-
-  const handleConfirm = async () => {
-    if (!confirmData) return;
-    const { transaction } = confirmData;
-    setLoading(true);
-    try {
-      const res = await deleteTransaction(token, transaction.txid);
-      if (res.status !== 'success') throw new Error(res.message || 'Gagal hapus');
-      setTransactions(prev => prev.filter(p => p.txid !== transaction.txid));
-      toast.success('Transaksi dihapus');
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-      setConfirmData(null);
-    }
-  };
-
   return (
     <PageLayout title="Riwayat Saya" onBack={onBack}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
@@ -163,7 +196,7 @@ export default function MyHistory({ onBack }) {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Cari nama atau blok"
+              placeholder="Cari nama atau RT"
               className="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg w-full sm:w-64 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
             <button
@@ -177,7 +210,7 @@ export default function MyHistory({ onBack }) {
           {/* Loading State */}
           {loading && (
             <div className="flex justify-center py-12">
-              <LoadingSpinner />
+              <LoadingSpinner loading text="Memuat data..." />
             </div>
           )}
 
@@ -219,14 +252,17 @@ export default function MyHistory({ onBack }) {
                             </span>
                           </div>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Blok: {t.blok || '-'}
+                            RT: {t.blok || '-'}
                           </p>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                             Petugas: {t.petugas || '-'}
                           </p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                            Tipe: {t.type === 'daily' ? 'Harian' : t.type === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                          </p>
                         </div>
                         <button
-                          onClick={() => requestDelete(t)}
+                          onClick={() => handleDeleteClick(t)}
                           className="text-xs text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300 font-medium"
                         >
                           Hapus
@@ -245,10 +281,9 @@ export default function MyHistory({ onBack }) {
             </> 
           )}
 
-          {/* Summary - Only show if there are transactions */}
+          {/* Summary & Pagination */}
           {!loading && !error && paged.length > 0 && (
             <>
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-gray-700">
                   <button
@@ -271,7 +306,6 @@ export default function MyHistory({ onBack }) {
                 </div>
               )}
 
-              {/* Summary */}
               <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
                 <div className="flex flex-wrap gap-6 text-sm">
                   <div>
@@ -291,14 +325,15 @@ export default function MyHistory({ onBack }) {
         </div>
       </div>
 
+      {/* Confirm Dialog Delete */}
       <ConfirmDialog
-        open={!!confirmData}
+        isOpen={showDeleteConfirm}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
         title="Konfirmasi Hapus"
-        message="Yakin ingin menghapus transaksi ini?"
+        message={`Yakin ingin menghapus transaksi untuk "${selectedTransaction?.nama || ''}" (Rp ${selectedTransaction?.nominal?.toLocaleString() || 0})?`}
         confirmText="Hapus"
         cancelText="Batal"
-        onConfirm={handleConfirm}
-        onCancel={() => setConfirmData(null)}
       />
     </PageLayout>
   );

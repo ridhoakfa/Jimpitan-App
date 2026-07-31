@@ -240,7 +240,7 @@ Submit transaksi setoran dari petugas.
 ```json
 {
   "status": "error",
-  "message": "Data tidak lengkap: customer_id, id (blok), nama, dan nominal harus diisi"
+  "message": "Data tidak lengkap: customer_id, id (RT), nama, dan nominal harus diisi"
 }
 ```
 
@@ -255,7 +255,7 @@ Submit transaksi setoran dari petugas.
 
 **Catatan:**
 - `customer_id`: ID customer (CUST-xxx) dari hasil scan QR
-- `id`: Nomor blok customer (contoh: A-12)
+- `id`: ID RT customer (contoh: RT 1, RT 2)
 - `nama`: Nama customer
 - `nominal`: Jumlah setoran dalam rupiah (harus > 0)
 - `user_id` dan `petugas` otomatis diambil dari token

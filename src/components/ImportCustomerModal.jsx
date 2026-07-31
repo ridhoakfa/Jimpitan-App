@@ -115,7 +115,7 @@ export default function ImportCustomerModal({ isOpen, onClose, onImport }) {
             <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-sm text-red-700 dark:text-red-300">
               <h3 className="font-semibold mb-2">📋 Format File yang Diperlukan:</h3>
               <ul className="list-disc list-inside space-y-1">
-                <li>Kolom 1: <strong>Blok</strong> (ID/No Blok)</li>
+                <li>Kolom 1: <strong>RT</strong> (RT / ID Wilayah)</li>
                 <li>Kolom 2: <strong>Nama</strong> (Nama Lengkap Customer)</li>
                 <li>Format: Excel (.xlsx) atau CSV</li>
                 <li>Baris pertama dapat berisi header</li>
@@ -186,7 +186,7 @@ export default function ImportCustomerModal({ isOpen, onClose, onImport }) {
                 <thead className="bg-gray-200 dark:bg-gray-700 sticky top-0">
                   <tr>
                     <th className="px-4 py-2 text-left text-gray-700 dark:text-gray-300 font-semibold">#</th>
-                    <th className="px-4 py-2 text-left text-gray-700 dark:text-gray-300 font-semibold">Blok</th>
+                    <th className="px-4 py-2 text-left text-gray-700 dark:text-gray-300 font-semibold">RT</th>
                     <th className="px-4 py-2 text-left text-gray-700 dark:text-gray-300 font-semibold">Nama</th>
                   </tr>
                 </thead>
@@ -211,7 +211,7 @@ export default function ImportCustomerModal({ isOpen, onClose, onImport }) {
             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg text-sm text-yellow-700 dark:text-yellow-300">
               <h3 className="font-semibold mb-1">⚠️ Perhatian:</h3>
               <ul className="list-disc list-inside space-y-1">
-                <li>Customer dengan nama + blok yang sama akan diabaikan</li>
+                <li>Customer dengan nama + RT yang sama akan diabaikan</li>
                 <li>QR Code akan otomatis dibuat untuk customer baru</li>
               </ul>
             </div>

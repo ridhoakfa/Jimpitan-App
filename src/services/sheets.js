@@ -346,7 +346,8 @@ export async function submitToSheet(payload) {
         nama: payload.nama,
         nominal: payload.nominal,
         user_id: payload.user_id,
-        petugas: payload.petugas
+        petugas: payload.petugas,
+        type: payload.type || 'daily'   // <--- INI YANG DITAMBAHKAN
       },
       false
     );
@@ -640,6 +641,15 @@ export async function importUsersFromSheet(token, users) {
       1000
     )
   );
+}
+
+export async function getUnpaidToday(token) {
+  try {
+    const response = await createJSONPRequest('getUnpaidToday', { token }, false);
+    return response;
+  } catch (error) {
+    throw error;
+  }
 }
 
 // ========================================

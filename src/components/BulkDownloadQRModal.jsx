@@ -135,10 +135,10 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
                 />
                 <div className="ml-3">
                   <div className="font-semibold text-gray-900 dark:text-white">
-                    🏢 Berdasarkan Blok
+                    🏢 Berdasarkan RT
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Pilih blok tertentu untuk download
+                    Pilih RT tertentu untuk download
                   </div>
                 </div>
               </label>
@@ -148,14 +148,14 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
             {downloadMode === 'byBlok' && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Pilih Blok <span className="text-red-500">*</span>
+                  Pilih RT <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedBlok}
                   onChange={(e) => setSelectedBlok(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 >
-                  <option value="">-- Pilih Blok --</option>
+                  <option value="">-- Pilih RT --</option>
                   {uniqueBloks.map((blok) => {
                     const count = customers.filter(c => String(c.blok).trim() === blok).length;
                     return (
@@ -174,7 +174,7 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
               <ul className="text-xs space-y-1">
                 <li>• Download berupa ZIP file berisi individual PNG images</li>
                 <li>• Setiap image adalah card QR yang siap cetak atau share</li>
-                <li>• Naming format: Jimpitan_QR_[Blok]_[Nama].png</li>
+                <li>• Naming format: Jimpitan_QR_[RT]_[Nama].png</li>
               </ul>
             </div>
 

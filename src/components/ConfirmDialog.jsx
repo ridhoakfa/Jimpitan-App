@@ -1,119 +1,113 @@
-import { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export default function ConfirmDialog({
-  isOpen = false,
+  isOpen,
   onClose,
   onConfirm,
+  variant = 'danger', // 'danger', 'warning', 'info'
   title = 'Konfirmasi',
-  subtitle = 'Tindakan memerlukan konfirmasi',
-  message,
+  subtitle = '',
+  message = 'Apakah Anda yakin?',
   additionalInfo = '',
-  confirmText = 'Ya, Lanjutkan',
+  confirmText = 'Ya',
   cancelText = 'Batal',
-  variant = 'danger' // danger, warning, info
 }) {
+  const confirmButtonRef = useRef(null);
+
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+    if (isOpen && confirmButtonRef.current) {
+      // Auto-focus confirm button
+      setTimeout(() => {
+        confirmButtonRef.current?.focus();
+      }, 100);
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const variants = {
+  // Styling based on variant
+  const variantColors = {
     danger: {
-      header: 'bg-gradient-to-r from-red-500 to-rose-500',
-      iconBg: 'bg-red-600/20',
-      button: 'bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 focus:ring-red-400',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      )
+      header: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800',
+      icon: 'text-red-500 dark:text-red-400',
+      confirmButton: 'bg-red-500 hover:bg-red-600 focus:ring-red-400',
     },
     warning: {
-      header: 'bg-gradient-to-r from-red-500 to-red-600',
-      iconBg: 'bg-red-600/20',
-      button: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:ring-red-400',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      )
+      header: 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800',
+      icon: 'text-yellow-500 dark:text-yellow-400',
+      confirmButton: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400',
     },
     info: {
-      header: 'bg-gradient-to-r from-red-500 to-red-600',
-      iconBg: 'bg-red-600/20',
-      button: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:ring-red-400',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      )
+      header: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
+      icon: 'text-blue-500 dark:text-blue-400',
+      confirmButton: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-400',
+    },
+  };
+
+  const colors = variantColors[variant] || variantColors.danger;
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
     }
   };
 
-  const currentVariant = variants[variant] || variants.danger;
+  const handleConfirm = () => {
+    onConfirm();
+  };
 
   return (
-    <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+      onClick={handleBackdropClick}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
-      
-      {/* Dialog */}
-      <div 
-        className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-2xl rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all border border-white/30 dark:border-gray-700/30"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header with gradient */}
-        <div className={`${currentVariant.header} p-6 text-white`}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-up border border-gray-200 dark:border-gray-700">
+        {/* Header */}
+        <div className={`px-6 py-4 border-b ${colors.header}`}>
           <div className="flex items-center gap-3">
-            {/* Icon */}
-            <div className={`${currentVariant.iconBg} p-3 rounded-full`}>
-              {currentVariant.icon}
+            {/* Icon based on variant */}
+            <div className={`text-2xl ${colors.icon}`}>
+              {variant === 'danger' && '⚠️'}
+              {variant === 'warning' && '⚡'}
+              {variant === 'info' && 'ℹ️'}
             </div>
             <div>
-              <h3 className="text-lg font-bold">{title}</h3>
-              <p className="text-sm opacity-90 mt-0.5">{subtitle}</p>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                {title}
+              </h3>
+              {subtitle && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {subtitle}
+                </p>
+              )}
             </div>
           </div>
         </div>
-        
-        {/* Content */}
-        <div className="p-6">
-          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+
+        {/* Body */}
+        <div className="px-6 py-4">
+          <p className="text-gray-700 dark:text-gray-300 text-base">
             {message}
           </p>
-          
-          {/* Additional Info */}
           {additionalInfo && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-700/50">
-              <p className="text-sm text-red-600 dark:text-red-300">
-                {additionalInfo}
-              </p>
-            </div>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
+              {additionalInfo}
+            </p>
           )}
         </div>
-        
-        {/* Actions */}
-        <div className="px-6 pb-6 flex gap-3">
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-2 justify-end border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
           >
             {cancelText}
           </button>
           <button
-            onClick={onConfirm}
-            className={`flex-1 px-4 py-2.5 font-semibold text-white rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg hover:shadow-xl hover:scale-105 border border-red-300/50 ${currentVariant.button}`}
+            ref={confirmButtonRef}
+            onClick={handleConfirm}
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${colors.confirmButton}`}
           >
             {confirmText}
           </button>

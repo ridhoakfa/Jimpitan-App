@@ -256,7 +256,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{base_url}}?action=createCustomer&token={{token}}&blok=A-101&nama=John Doe&callback=callback",
+									"raw": "{{base_url}}?action=createCustomer&token={{token}}&blok=RT 1&nama=John Doe&callback=callback",
 									"host": ["{{base_url}}"],
 									"query": [
 										{
@@ -269,7 +269,7 @@
 										},
 										{
 											"key": "blok",
-											"value": "A-101"
+											"value": "RT 1"
 										},
 										{
 											"key": "nama",
@@ -291,7 +291,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{base_url}}?action=updateCustomer&token={{token}}&customerId=CUST-001&blok=A-102&nama=Jane Doe&callback=callback",
+									"raw": "{{base_url}}?action=updateCustomer&token={{token}}&customerId=CUST-001&blok=RT 1&nama=Jane Doe&callback=callback",
 									"host": ["{{base_url}}"],
 									"query": [
 										{

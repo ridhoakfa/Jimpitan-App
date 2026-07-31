@@ -22,7 +22,7 @@ Aplikasi manajemen **Jimpitan** (arisan/tabungan komunitas) modern berbasis **Re
 ### 👤 Untuk Admin
 - ✅ **Manajemen User** - Tambah, edit, hapus user + **Bulk Import dari Excel**
 - ✅ **Manajemen Customer** - CRUD customer + **QR Code Generator** + **Bulk Import & Download QR**
-- ✅ **Dashboard Analytics** - Statistik transaksi per blok, per petugas
+- ✅ **Dashboard Analytics** - Statistik transaksi per RT, per petugas
 - ✅ **Riwayat Lengkap** - View semua transaksi dari semua user dengan filter
 - ✅ **Activity Log** - Tracking akivitas login dan operasi user
 - ✅ **Export QR Codes** - Download QR dalam format ZIP (individual PNG files)
@@ -126,7 +126,7 @@ EOF
 ### 5. Setup Google Sheets Database
 **Create spreadsheet dengan sheets:**
 1. **Users** - Columns: ID, Name, Role, Username, Password, Token, Token_Expiry, Last_Login
-2. **Customers** - Columns: ID, Blok, Nama, QR_Hash, Total_Setoran, Last_Transaction
+2. **Customers** - Columns: ID, RT, Nama, QR_Hash, Total_Setoran, Last_Transaction
 3. **History** - Columns: ID, Customer_ID, User_ID, Petugas, Nominal, Timestamp
 4. **Config** - Columns: Key, Value (system configuration)
 5. **Sessions** - Columns: Token, User_ID, Expiry (session tracking)
@@ -199,9 +199,9 @@ const qrHash = Utilities.computeDigest(
 ```
 
 **Download Bulk QR:**
-- Admin dapat download QR untuk semua customer atau per-blok
+- Admin dapat download QR untuk semua customer atau per-RT
 - Format: ZIP file berisi individual PNG images
-- Naming: `Jimpitan_QR_[Blok]_[Nama].png`
+- Naming: `Jimpitan_QR_[RT]_[Nama].png`
 - Scale: 2x untuk quality tinggi
 
 **Styling QR Card:**
@@ -209,7 +209,7 @@ const qrHash = Utilities.computeDigest(
 - Top accent bar (indigo to purple)
 - Logo emoji (🏡)
 - Title: "Jimpitan"
-- Customer name & blok
+- Customer name & RT
 - QR code (300px)
 - Instruction text
 
@@ -222,10 +222,10 @@ const qrHash = Utilities.computeDigest(
 - Bulk insert ke Users sheet
 
 **Import Customers dari Excel:**
-- Columns: Blok, Nama
+- Columns: RT, Nama
 - Auto-generate Customer ID (CUST-xxx)
 - Auto-generate QR Hash (SHA-256)
-- Duplicate detection (per blok+nama)
+- Duplicate detection (per RT+nama)
 - Bulk insert ke Customers sheet
 
 ### Authentication Flow

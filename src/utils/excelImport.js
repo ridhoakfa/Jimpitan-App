@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 
 /**
  * Parse Excel file and extract customer data
- * Expected columns: Blok, Nama (or similar variations)
+ * Expected columns: RT, Nama (or similar variations)
  * @param {File} file - Excel file
  * @returns {Promise<Array>} Array of {blok, nama} objects
  */
@@ -24,7 +24,8 @@ export async function parseExcelFile(file) {
             const blokKey = Object.keys(row).find(key => 
               key.toLowerCase().includes('blok') || 
               key.toLowerCase().includes('block') ||
-              key.toLowerCase().includes('no')
+              key.toLowerCase().includes('no') ||
+              key.toLowerCase().includes('rt')
             );
             const namaKey = Object.keys(row).find(key => 
               key.toLowerCase().includes('nama') || 
@@ -39,7 +40,7 @@ export async function parseExcelFile(file) {
           .filter(customer => customer.blok && customer.nama); // Filter out empty rows
         
         if (customers.length === 0) {
-          reject(new Error('Tidak ada data customer yang valid. Pastikan file memiliki kolom "Blok" dan "Nama"'));
+          reject(new Error('Tidak ada data customer yang valid. Pastikan file memiliki kolom "RT" dan "Nama"'));
         } else {
           resolve(customers);
         }
@@ -69,7 +70,7 @@ export function validateCustomerData(customers) {
     const lineNumber = index + 2; // +2 because header is row 1, data starts at row 2
     
     if (!customer.blok) {
-      errors.push(`Baris ${lineNumber}: Blok tidak boleh kosong`);
+      errors.push(`Baris ${lineNumber}: RT tidak boleh kosong`);
     }
     if (!customer.nama) {
       errors.push(`Baris ${lineNumber}: Nama tidak boleh kosong`);
@@ -77,7 +78,7 @@ export function validateCustomerData(customers) {
     
     const key = `${customer.blok}-${customer.nama}`.toLowerCase();
     if (seen.has(key)) {
-      errors.push(`Baris ${lineNumber}: Duplikasi Blok "${customer.blok}" dan Nama "${customer.nama}"`);
+      errors.push(`Baris ${lineNumber}: Duplikasi RT "${customer.blok}" dan Nama "${customer.nama}"`);
     }
     seen.add(key);
   });

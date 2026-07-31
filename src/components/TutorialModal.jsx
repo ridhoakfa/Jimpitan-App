@@ -5,13 +5,12 @@ const TUTORIALS = {
     {
       id: 'users',
       title: '👥 Manajemen Users',
-      icon: '👥',
       description: 'Kelola pengguna sistem (Admin & Petugas)',
       steps: [
         {
           title: 'Melihat Daftar Users',
           content: 'Buka menu Users untuk melihat semua pengguna yang terdaftar di sistem.',
-          tips: '💡 Gunakan fitur search untuk mencari user tertentu'
+          tips: '💡 Gunakan fitur pencarian untuk mencari user tertentu'
         },
         {
           title: 'Menambah User Baru',
@@ -33,18 +32,17 @@ const TUTORIALS = {
     {
       id: 'customers',
       title: '📋 Manajemen Customer',
-      icon: '📋',
       description: 'Kelola data nasabah jimpitan',
       steps: [
         {
           title: 'Melihat Daftar Customer',
           content: 'Akses menu Customers untuk melihat semua nasabah yang terdaftar.',
-          tips: '🔍 Gunakan pencarian berdasarkan nama atau blok'
+          tips: '🔍 Gunakan pencarian berdasarkan nama atau RT'
         },
         {
-          title: 'Menambah Customer Baru',
-          content: 'Klik "Tambah Customer", isi Nama dan Nomor Blok, sistem akan otomatis generate QR Code unik.',
-          tips: '📱 QR Code akan otomatis dibuat untuk setiap customer'
+          title: 'Menambah Customer Baru (Manual atau Import Excel)',
+          content: 'Klik "Tambah Customer" untuk input manual satu per satu, atau klik "Import" untuk upload file Excel dengan banyak data sekaligus (format: kolom RT dan Nama).',
+          tips: '📊 Import Excel sangat berguna untuk menginput 75+ customer sekaligus'
         },
         {
           title: 'Melihat QR Code',
@@ -52,9 +50,9 @@ const TUTORIALS = {
           tips: '💾 QR Code bisa didownload (PNG) atau langsung diprint'
         },
         {
-          title: 'Download/Print QR',
-          content: 'Di modal QR, pilih jenis QR yang diinginkan, lalu klik Download untuk simpan atau Print untuk cetak langsung.',
-          tips: '🎨 QR Card sudah terdesain profesional dengan info customer'
+          title: 'Download QR (Individu atau Bulk)',
+          content: 'Untuk satu customer, klik "Download QR" di modal. Untuk banyak customer, gunakan tombol "Download QR" di halaman Customers, pilih "Semua" atau "Berdasarkan RT", lalu download ZIP berisi semua QR.',
+          tips: '🎨 QR Card sudah terdesain dengan logo Karang Taruna dan info customer'
         },
         {
           title: 'Copy QR Hash/URL',
@@ -66,74 +64,113 @@ const TUTORIALS = {
     {
       id: 'history',
       title: '📊 Riwayat Transaksi',
-      icon: '📊',
-      description: 'Lihat semua transaksi yang tercatat',
+      description: 'Lihat dan kelola semua transaksi yang tercatat',
       steps: [
         {
           title: 'Melihat Semua Transaksi',
-          content: 'Menu History menampilkan semua transaksi dari semua petugas dan customer.',
+          content: 'Menu History menampilkan semua transaksi dari semua petugas dan customer, lengkap dengan tipe transaksi (Harian, Bulanan, Tahunan).',
           tips: '📅 Data diurutkan dari transaksi terbaru'
         },
         {
-          title: 'Filter Transaksi',
-          content: 'Gunakan filter berdasarkan Customer, Petugas, atau rentang tanggal untuk mempersempit pencarian.',
-          tips: '🗓️ Filter tanggal sangat berguna untuk laporan bulanan'
+          title: 'Filter Periode (Hari/Minggu/Bulan/Tahun/Custom)',
+          content: 'Gunakan filter periode untuk mempersempit data: Hari Ini, Minggu Ini, Bulan Ini, Tahun Ini, atau Custom dengan rentang tanggal spesifik.',
+          tips: '🗓️ Filter "Hari Ini" mengikuti cut-off jam 3 pagi (transaksi dini hari dianggap hari sebelumnya)'
         },
         {
-          title: 'Export ke Excel',
-          content: 'Klik tombol "Export Excel" untuk download data transaksi dalam format .xlsx untuk analisis lebih lanjut.',
-          tips: '📊 File Excel lengkap dengan semua kolom data'
+          title: 'Filter Tipe Transaksi',
+          content: 'Pilih tipe transaksi: Semua, Harian, Bulanan, atau Tahunan. Berguna untuk memisahkan iuran reguler dengan iuran khusus (perantau).',
+          tips: '📋 Transaksi bulanan/tahunan tidak mempengaruhi dashboard "Tugas Hari Ini"'
         },
         {
-          title: 'Export ke PDF',
-          content: 'Klik "Export PDF" untuk membuat laporan dalam format PDF, cocok untuk print atau arsip.',
-          tips: '📄 PDF sudah terformat rapi dengan header dan footer'
+          title: 'Export ke Excel atau PDF',
+          content: 'Klik tombol "PDF" atau "Excel" untuk download laporan sesuai filter yang sedang aktif. Hasil export mencakup semua kolom termasuk Tipe Transaksi.',
+          tips: '📄 Export PDF cocok untuk arsip, Excel untuk analisis data lebih lanjut'
+        },
+        {
+          title: 'Hapus Transaksi',
+          content: 'Klik 🗑️ Hapus pada transaksi yang ingin dihapus. Admin bisa menghapus semua transaksi, petugas hanya bisa menghapus transaksi sendiri.',
+          tips: '⚠️ Konfirmasi akan muncul sebelum penghapusan untuk mencegah kesalahan'
         }
       ]
     },
     {
       id: 'scanqr',
       title: '📱 Scan QR Code',
-      icon: '📱',
-      description: 'Scan QR customer untuk transaksi',
+      description: 'Scan QR customer untuk transaksi cepat',
       steps: [
         {
           title: 'Membuka Scanner',
           content: 'Akses menu Scan QR, izinkan akses kamera jika diminta browser.',
-          tips: '📷 Pastikan kamera berfungsi dengan baik'
+          tips: '📷 Pastikan kamera berfungsi dengan baik dan pencahayaan cukup'
         },
         {
           title: 'Scan QR Code',
-          content: 'Arahkan kamera ke QR Code customer, sistem akan otomatis mendeteksi dan berpindah ke halaman Submit dengan data customer sudah terisi.',
+          content: 'Arahkan kamera ke QR Code customer. Sistem akan otomatis mendeteksi dan berpindah ke halaman Submit dengan data customer sudah terisi.',
           tips: '✨ QR Code terdeteksi otomatis, data customer langsung terisi'
         },
         {
-          title: 'Input & Submit',
-          content: 'Di halaman Submit, masukkan nominal jimpitan lalu klik Submit untuk menyimpan. Setelah berhasil, otomatis redirect ke MyHistory.',
-          tips: '💰 Format nominal: 5000, 10000, 15000 (tanpa titik/koma)'
+          title: 'Input Nominal & Submit',
+          content: 'Di halaman Submit, input nominal (bisa klik tombol Rp 500 untuk cepat atau ketik manual) lalu klik Submit. Setelah berhasil, otomatis redirect ke Riwayat Saya.',
+          tips: '💰 Nominal default 500, bisa diubah sesuai kebutuhan. Untuk bulanan/tahunan, pilih tipe di atas form'
         }
       ]
     },
     {
       id: 'submit',
       title: '💰 Input Nominal Transaksi',
-      icon: '💰',
-      description: 'Input nominal setelah scan QR',
+      description: 'Input nominal setelah scan QR, dengan pilihan tipe transaksi',
       steps: [
         {
           title: 'Data Customer Otomatis',
-          content: 'Setelah scan QR berhasil, halaman Submit akan terbuka dengan data customer sudah terisi otomatis.',
+          content: 'Setelah scan QR berhasil, halaman Submit akan terbuka dengan data customer sudah terisi otomatis (nama dan RT).',
           tips: '✨ Tidak perlu pilih customer manual, data sudah siap'
         },
         {
-          title: 'Input Nominal',
-          content: 'Masukkan jumlah setoran jimpitan dalam angka (contoh: 5000, 10000, 15000).',
-          tips: '💵 Format: angka tanpa titik atau koma'
+          title: 'Pilih Tipe Transaksi',
+          content: 'Pilih tipe: Harian (untuk iuran rutin), Bulanan, atau Tahunan (untuk iuran khusus seperti perantau).',
+          tips: '📋 Tipe Harian akan dicek double entry dan libur Minggu, tipe lain tidak'
+        },
+        {
+          title: 'Input Nominal (Bisa Klik Tombol Cepat)',
+          content: 'Masukkan nominal setoran. Tersedia tombol cepat Rp 500 (default) untuk mempercepat input. Bisa juga mengetik nominal lain, misal 1000, 2000, atau 15000 untuk iuran bulanan.',
+          tips: '💵 Default 500, ketik manual jika nominal berbeda'
         },
         {
           title: 'Submit & Redirect',
-          content: 'Klik Submit untuk menyimpan. Data tersimpan dengan TXID unik dan otomatis redirect ke MyHistory.',
-          tips: '📝 Transaksi langsung masuk ke riwayat Anda'
+          content: 'Klik Submit untuk menyimpan. Data tersimpan dengan TXID unik dan otomatis redirect ke Riwayat Saya.',
+          tips: '📝 Transaksi langsung masuk ke riwayat Anda dengan tipe yang dipilih'
+        }
+      ]
+    },
+    {
+      id: 'dashboard',
+      title: '📋 Tugas Hari Ini',
+      description: 'Lihat daftar rumah yang sudah/belum setor hari ini (untuk semua pengguna)',
+      steps: [
+        {
+          title: 'Melihat Status Hari Ini',
+          content: 'Menu ini menampilkan semua rumah dengan status setoran hari ini. Header menunjukkan jumlah "Belum setor" dan "Sudah setor".',
+          tips: '📊 Berguna untuk memantau progres jimpitan harian'
+        },
+        {
+          title: 'Filter Status (Semua/Belum/Sudah)',
+          content: 'Gunakan filter status untuk melihat semua customer, hanya yang belum setor, atau hanya yang sudah setor.',
+          tips: '🔍 Filter "Semua" menampilkan status dengan badge warna (merah=belum, hijau=sudah)'
+        },
+        {
+          title: 'Cari Nama atau RT',
+          content: 'Gunakan kotak pencarian untuk mencari customer tertentu berdasarkan nama atau RT.',
+          tips: '🔎 Memudahkan jika ingin mengecek satu rumah tertentu'
+        },
+        {
+          title: 'Total Setoran Hari Ini',
+          content: 'Setiap card customer menampilkan "Total keseluruhan" dan "Hari ini" (total setoran hari ini).',
+          tips: '💰 "Hari ini" menunjukkan berapa yang sudah disetor customer pada hari ini saja'
+        },
+        {
+          title: 'Data Otomatis Refresh',
+          content: 'Data dashboard otomatis diperbarui setiap 30 detik. Bisa juga klik tombol "Refresh" untuk update manual.',
+          tips: '🔄 Pastikan data selalu terkini tanpa perlu refresh halaman'
         }
       ]
     }
@@ -142,7 +179,6 @@ const TUTORIALS = {
     {
       id: 'scanqr',
       title: '📱 Scan QR Code',
-      icon: '📱',
       description: 'Scan QR customer untuk transaksi cepat',
       steps: [
         {
@@ -156,13 +192,13 @@ const TUTORIALS = {
           tips: '⚡ Tidak perlu menekan tombol, deteksi otomatis'
         },
         {
-          title: 'Auto-Navigate',
+          title: 'Auto-Navigate ke Submit',
           content: 'Setelah QR terdeteksi, sistem otomatis membuka halaman Submit dengan data customer sudah terisi.',
-          tips: '✨ Tinggal masukkan nominal dan submit'
+          tips: '✨ Tinggal pilih tipe transaksi, masukkan nominal, dan submit'
         },
         {
           title: 'Validasi QR',
-          content: 'Sistem hanya menerima QR Code valid dengan format 10 karakter hexadecimal.',
+          content: 'Sistem hanya menerima QR Code valid dengan format 10 karakter hexadecimal (hash).',
           tips: '❌ QR Code tidak valid akan ditolak dengan pesan error'
         }
       ]
@@ -170,27 +206,31 @@ const TUTORIALS = {
     {
       id: 'submit',
       title: '💰 Input Nominal Transaksi',
-      icon: '💰',
-      description: 'Input nominal setelah scan QR',
+      description: 'Input nominal setelah scan QR, dengan pilihan tipe',
       steps: [
         {
           title: 'Data Customer Terisi Otomatis',
-          content: 'Setelah scan QR berhasil, halaman Submit akan terbuka otomatis dengan data customer sudah terisi.',
+          content: 'Setelah scan QR berhasil, halaman Submit terbuka otomatis dengan data customer sudah terisi (nama dan RT).',
           tips: '✨ Tidak perlu pilih customer manual, semuanya otomatis'
         },
         {
-          title: 'Input Nominal Setoran',
-          content: 'Masukkan jumlah setoran jimpitan dalam angka (contoh: 5000, 10000, 15000).',
-          tips: '💵 Masukkan angka tanpa titik atau koma'
+          title: 'Pilih Tipe Transaksi',
+          content: 'Pilih tipe: Harian (untuk iuran rutin), Bulanan, atau Tahunan (untuk iuran khusus).',
+          tips: '📋 Tipe Harian: tidak bisa double di hari yang sama dan libur Minggu'
+        },
+        {
+          title: 'Input Nominal (Klik Tombol Cepat)',
+          content: 'Masukkan nominal setoran. Klik tombol "Rp 500" untuk cepat, atau ketik manual jika nominal berbeda.',
+          tips: '💵 Default 500, bisa diubah sesuai kebutuhan'
         },
         {
           title: 'Submit Transaksi',
-          content: 'Klik tombol Submit untuk menyimpan. Transaksi akan tersimpan dengan TXID unik.',
+          content: 'Klik tombol Submit untuk menyimpan. Transaksi akan tersimpan dengan TXID unik dan tipe yang dipilih.',
           tips: '✅ Notifikasi sukses akan muncul jika berhasil'
         },
         {
-          title: 'Redirect ke MyHistory',
-          content: 'Setelah submit berhasil, sistem otomatis mengarahkan ke halaman MyHistory untuk melihat transaksi yang baru saja dicatat.',
+          title: 'Redirect ke Riwayat Saya',
+          content: 'Setelah submit berhasil, sistem otomatis mengarahkan ke halaman Riwayat Saya untuk melihat transaksi terbaru.',
           tips: '📝 Transaksi langsung tampil di riwayat Anda'
         }
       ]
@@ -198,28 +238,59 @@ const TUTORIALS = {
     {
       id: 'myhistory',
       title: '📝 Riwayat Saya',
-      icon: '📝',
-      description: 'Lihat transaksi yang Anda input',
+      description: 'Lihat transaksi yang Anda input sendiri',
       steps: [
         {
-          title: 'Melihat Riwayat',
-          content: 'Menu MyHistory menampilkan semua transaksi yang DI-INPUT oleh akun Anda saja.',
+          title: 'Melihat Riwayat Pribadi',
+          content: 'Menu Riwayat Saya menampilkan semua transaksi yang DI-INPUT oleh akun Anda saja, termasuk tipe transaksi (Harian/Bulanan/Tahunan).',
           tips: '👤 Hanya transaksi Anda yang tampil, bukan semua petugas'
         },
         {
           title: 'Detail Transaksi',
-          content: 'Setiap kartu transaksi menampilkan TXID, Nama Customer, Blok, Nominal, dan Waktu transaksi.',
+          content: 'Setiap kartu menampilkan TXID, Nama Customer, RT, Nominal, Tipe, dan Waktu transaksi.',
           tips: '🏷️ TXID adalah ID unik untuk setiap transaksi'
         },
         {
-          title: 'Hapus Transaksi',
-          content: 'Klik tombol hapus (🗑️) untuk menghapus transaksi yang salah input. Konfirmasi diperlukan.',
-          tips: '⚠️ Hati-hati, data yang dihapus tidak bisa dikembalikan'
+          title: 'Cari Berdasarkan Nama atau RT',
+          content: 'Gunakan kotak pencarian untuk menemukan transaksi tertentu dari customer yang Anda catat.',
+          tips: '🔎 Cari berdasarkan nama customer atau RT'
         },
         {
-          title: 'Konfirmasi Hapus',
-          content: 'Setelah klik hapus, akan muncul dialog konfirmasi. Klik "Hapus" untuk melanjutkan atau "Batal" untuk membatalkan.',
-          tips: '🔒 Fitur konfirmasi mencegah penghapusan tidak sengaja'
+          title: 'Hapus Transaksi (Hanya Milik Sendiri)',
+          content: 'Klik tombol hapus (🗑️) untuk menghapus transaksi yang salah input. Petugas hanya bisa menghapus transaksi yang dicatat sendiri.',
+          tips: '⚠️ Konfirmasi akan muncul sebelum penghapusan, data tidak bisa dikembalikan'
+        }
+      ]
+    },
+    {
+      id: 'dashboard',
+      title: '📋 Tugas Hari Ini',
+      description: 'Lihat daftar rumah yang sudah/belum setor hari ini',
+      steps: [
+        {
+          title: 'Melihat Status Hari Ini',
+          content: 'Menu ini menampilkan semua rumah dengan status setoran hari ini. Header menunjukkan jumlah "Belum setor" dan "Sudah setor".',
+          tips: '📊 Berguna untuk memantau progres jimpitan harian'
+        },
+        {
+          title: 'Filter Status (Semua/Belum/Sudah)',
+          content: 'Gunakan filter status untuk melihat semua customer, hanya yang belum setor, atau hanya yang sudah setor.',
+          tips: '🔍 Filter "Semua" menampilkan status dengan badge warna (merah=belum, hijau=sudah)'
+        },
+        {
+          title: 'Cari Nama atau RT',
+          content: 'Gunakan kotak pencarian untuk mencari customer tertentu berdasarkan nama atau RT.',
+          tips: '🔎 Memudahkan jika ingin mengecek satu rumah tertentu'
+        },
+        {
+          title: 'Total Setoran Hari Ini',
+          content: 'Setiap card customer menampilkan "Total keseluruhan" dan "Hari ini" (total setoran hari ini).',
+          tips: '💰 "Hari ini" menunjukkan berapa yang sudah disetor customer pada hari ini saja'
+        },
+        {
+          title: 'Data Otomatis Refresh',
+          content: 'Data dashboard otomatis diperbarui setiap 30 detik. Bisa juga klik tombol "Refresh" untuk update manual.',
+          tips: '🔄 Pastikan data selalu terkini tanpa perlu refresh halaman'
         }
       ]
     }
@@ -263,6 +334,12 @@ export default function TutorialModal({ isOpen, onClose, userRole = 'petugas' })
     onClose();
   };
 
+  // Fungsi untuk menampilkan title tanpa icon di card
+  const getDisplayTitle = (title) => {
+    // Hapus icon (emoji) dari awal title
+    return title.replace(/^[^\s]+\s/, '');
+  };
+
   return (
     <div 
       className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] flex items-center justify-center p-4"
@@ -275,8 +352,8 @@ export default function TutorialModal({ isOpen, onClose, userRole = 'petugas' })
         {/* Header */}
         <div className="flex-shrink-0 flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-red-500 to-red-600 text-white">
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              📚 Tutorial Penggunaan
+            <h2 className="text-2xl font-bold">
+              Tutorial Penggunaan
             </h2>
             <p className="text-sm text-red-100 mt-1">
               {userRole === 'admin' ? 'Panduan untuk Administrator' : 'Panduan untuk Petugas'}
@@ -307,33 +384,37 @@ export default function TutorialModal({ isOpen, onClose, userRole = 'petugas' })
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {tutorials.map((tutorial) => (
-                  <button
-                    key={tutorial.id}
-                    onClick={() => handleSelectTutorial(tutorial.id)}
-                    className="group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 hover:from-red-50 hover:to-white dark:hover:from-red-900/30 dark:hover:to-gray-900/30 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 hover:border-red-400 dark:hover:border-red-500 transition-all duration-200 hover:shadow-xl hover:scale-105 text-left"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="text-4xl flex-shrink-0">
-                        {tutorial.icon}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {tutorial.title}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                          {tutorial.description}
-                        </p>
-                        <div className="flex items-center text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                          <span>{tutorial.steps.length} Langkah</span>
-                          <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
+                {tutorials.map((tutorial) => {
+                  const icon = tutorial.title.split(' ')[0]; // Ambil icon dari title
+                  const displayTitle = getDisplayTitle(tutorial.title);
+                  return (
+                    <button
+                      key={tutorial.id}
+                      onClick={() => handleSelectTutorial(tutorial.id)}
+                      className="group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 hover:from-red-50 hover:to-white dark:hover:from-red-900/30 dark:hover:to-gray-900/30 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 hover:border-red-400 dark:hover:border-red-500 transition-all duration-200 hover:shadow-xl hover:scale-105 text-left"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="text-4xl flex-shrink-0">
+                          {icon}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {displayTitle}
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            {tutorial.description}
+                          </p>
+                          <div className="flex items-center text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                            <span>{tutorial.steps.length} Langkah</span>
+                            <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
@@ -367,10 +448,10 @@ export default function TutorialModal({ isOpen, onClose, userRole = 'petugas' })
                   </button>
 
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="text-5xl">{activeTutorial.icon}</div>
+                    <div className="text-5xl">{activeTutorial.title.split(' ')[0]}</div>
                     <div>
                       <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        {activeTutorial.title}
+                        {getDisplayTitle(activeTutorial.title)}
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
                         {activeTutorial.description}

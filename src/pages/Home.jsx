@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { useLocation } from 'react-router-dom'; // <-- tambahkan
 import TutorialModal from '../components/TutorialModal.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 
@@ -257,8 +258,19 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
 
 export default function Home({ onSetNavigate, onViewChange }) {
   const { currentUser, isAdmin } = useAuth();
+  const location = useLocation();
   const [currentView, setCurrentView] = useState('home');
   const [qrHash, setQrHash] = useState(null);
+
+  // Efek untuk membaca state dari navigasi (dari App.jsx)
+  useEffect(() => {
+    const view = location.state?.view;
+    if (view) {
+      setCurrentView(view);
+      // Hapus state agar tidak mengganggu navigasi berikutnya
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleNavigate = (view, data = null) => {
     setCurrentView(view);

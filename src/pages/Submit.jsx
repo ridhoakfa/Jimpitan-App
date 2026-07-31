@@ -3,20 +3,51 @@ import PageLayout from '../components/PageLayout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { getCustomerByQRHash, submitToSheet } from '../services/sheets';
+import { getCustomerByQRHash, submitToSheet, getConfig } from '../services/sheets';
+import { useNavigate } from 'react-router-dom';
 
 export default function Submit({ onBack, qrHash: propsQrHash }) {
   const { currentUser, token } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState(null);
   const [formData, setFormData] = useState({
-    nominal: ''
+    nominal: '',
+    type: 'daily' // default: harian
   });
+  const [defaultNominal, setDefaultNominal] = useState(500);
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   const qrHash = propsQrHash;
+
+  // Ambil config default_nominal dari backend
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const result = await getConfig(token);
+        if (result.status === 'success' && result.data && result.data.default_nominal) {
+          const val = parseInt(result.data.default_nominal) || 500;
+          setDefaultNominal(val);
+          setFormData(prev => ({ ...prev, nominal: val.toString() }));
+        } else {
+          setFormData(prev => ({ ...prev, nominal: '500' }));
+        }
+      } catch (err) {
+        console.warn('Gagal load config, pakai default 500', err);
+        setFormData(prev => ({ ...prev, nominal: '500' }));
+      }
+      setConfigLoaded(true);
+    };
+    if (token) {
+      fetchConfig();
+    } else {
+      setFormData(prev => ({ ...prev, nominal: '500' }));
+      setConfigLoaded(true);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!qrHash) {
@@ -53,10 +84,17 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
     }));
   }
 
+  // Set nominal ke default
+  function setNominalDefault() {
+    setFormData(prev => ({
+      ...prev,
+      nominal: defaultNominal.toString().trim()
+    }));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
 
-    // Validation
     const nominal = parseFloat(formData.nominal);
     if (!nominal || nominal <= 0) {
       toast.error('Nominal tidak valid', 'Masukkan nominal lebih dari 0');
@@ -78,23 +116,24 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
       setSubmitting(true);
 
       const payload = {
-        customer_id: customer.id,  // CUST-xxx
-        id: customer.blok,         // Blok number
+        customer_id: customer.id,
+        id: customer.blok,
         nama: customer.nama,
         nominal: nominal,
         user_id: currentUser.id,
-        petugas: currentUser.name
+        petugas: currentUser.name,
+        type: formData.type // <--- kirim tipe transaksi
       };
 
       const response = await submitToSheet(payload);
       
       if (response.status === 'success') {
         toast.success('Transaksi berhasil dicatat!');
-        
-        // Reset form
-        setFormData({ nominal: '' });
-        
-        // Navigate after short delay
+        // Reset ke default setelah sukses
+        setFormData({ 
+          nominal: defaultNominal.toString(),
+          type: 'daily' // reset ke harian
+        });
         setTimeout(() => {
           navigate('/my-history');
         }, 1500);
@@ -109,7 +148,7 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
     }
   }
 
-  if (loading) {
+  if (loading || !configLoaded) {
     return (
       <PageLayout title="Submit Transaksi" subtitle="Mencatat jimpitan warga" onBack={onBack}>
         <LoadingSpinner text="Memuat data customer..." />
@@ -178,7 +217,7 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
           
           <div className="grid grid-cols-2 gap-3 md:gap-4 pt-3 md:pt-4 border-t border-white/20">
             <div>
-              <div className="text-xs md:text-sm opacity-75">Blok</div>
+              <div className="text-xs md:text-sm opacity-75">RT</div>
               <div className="text-base md:text-lg font-bold">{customer.blok || customer.id}</div>
             </div>
             <div>
@@ -193,11 +232,77 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
         {/* Form Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6">
           <form onSubmit={handleSubmit}>
+            {/* ========================================================== */}
+            {/* TIPE TRANSAKSI (BARU) */}
+            {/* ========================================================== */}
+            <div className="mb-4 md:mb-6">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                📋 Tipe Transaksi
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, type: 'daily' }))}
+                  className={`px-4 py-2 rounded-lg border transition-colors ${
+                    formData.type === 'daily'
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  📅 Harian
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, type: 'monthly' }))}
+                  className={`px-4 py-2 rounded-lg border transition-colors ${
+                    formData.type === 'monthly'
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  📆 Bulanan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, type: 'yearly' }))}
+                  className={`px-4 py-2 rounded-lg border transition-colors ${
+                    formData.type === 'yearly'
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  📅 Tahunan
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {formData.type === 'daily' && '✅ Transaksi harian — wajib setiap hari (Senin–Sabtu)'}
+                {formData.type === 'monthly' && '📆 Transaksi bulanan — untuk iuran per bulan '}
+                {formData.type === 'yearly' && '📅 Transaksi tahunan — untuk iuran per tahun'}
+              </p>
+            </div>
+
             {/* Nominal Input */}
             <div className="mb-4 md:mb-6">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 💰 Nominal Setoran <span className="text-red-500">*</span>
               </label>
+              
+              {/* Tombol cepat 500 (sesuai default) */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={setNominalDefault}
+                  className={`px-4 py-2 rounded-lg border transition-colors ${
+                    parseInt(formData.nominal) === defaultNominal
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  Rp {defaultNominal.toLocaleString()}
+                </button>
+                <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">(Default)</span>
+              </div>
+
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold">
                   Rp
@@ -211,10 +316,12 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
                   required
                   disabled={submitting}
                   className="w-full pl-12 pr-4 py-2 md:py-3 text-base md:text-lg font-semibold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  min="1"
+                  step="any"
                 />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 hidden md:block">
-                💡 Masukkan nominal dalam rupiah (contoh: 5000)
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                💡 Masukkan nominal dalam rupiah (contoh: 500, 1000, atau 2000). Default {defaultNominal}.
               </p>
             </div>
 
@@ -237,7 +344,7 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
               </button>
               <button
                 type="submit"
-                disabled={submitting || !formData.nominal}
+                disabled={submitting || !formData.nominal || parseFloat(formData.nominal) <= 0}
                 className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm md:text-base font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {submitting ? (
@@ -249,9 +356,7 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
                     Menyimpan...
                   </>
                 ) : (
-                  <>
-                    ✅ Submit Transaksi
-                  </>
+                  <>✅ Submit Transaksi</>
                 )}
               </button>
             </div>
@@ -259,7 +364,7 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
         </div>
 
         {/* Info Box */}
-        <div className="mt-3 md:mt-6 p-3 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-center hidden md:block">
+        <div className="mt-3 md:mt-6 p-3 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             💡 Transaksi akan tercatat atas nama <strong>{currentUser?.name}</strong>
           </p>
