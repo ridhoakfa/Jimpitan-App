@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { promptInstall, canInstall, isInstalled, getInstallInstructions } from '../utils/pwa';
+import { useToast } from '../hooks/useToast';
 
 export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const toast = useToast();
 
+  // Cek apakah sudah terinstall atau sudah dismiss di session ini
   useEffect(() => {
-    if (isInstalled()) {
+    if (isInstalled() || sessionStorage.getItem('install-prompt-dismissed') === 'true') {
       return;
     }
 
@@ -26,17 +29,49 @@ export default function InstallPrompt() {
     };
   }, []);
 
+  // Listener untuk event appinstalled (jika user install dari browser)
+  useEffect(() => {
+    const handleAppInstalled = () => {
+      setShowPrompt(false);
+      setInstalling(false);
+      sessionStorage.setItem('install-prompt-dismissed', 'true');
+      toast.success('Aplikasi berhasil diinstall!');
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, [toast]);
+
   const handleInstall = async () => {
     setInstalling(true);
-    const installed = await promptInstall();
-    
-    if (installed) {
+    try {
+      const installed = await promptInstall();
+      if (installed) {
+        // Berhasil install
+        setShowPrompt(false);
+        sessionStorage.setItem('install-prompt-dismissed', 'true');
+        toast.success('Aplikasi berhasil diinstall!');
+      } else {
+        // User membatalkan atau gagal
+        setShowPrompt(false);
+        sessionStorage.setItem('install-prompt-dismissed', 'true');
+        // Tampilkan instruksi manual sebagai alternatif
+        setShowInstructions(true);
+        toast.info('Install dibatalkan. Anda bisa install manual melalui menu browser.');
+      }
+    } catch (error) {
+      // Error saat install
+      console.error('Install error:', error);
       setShowPrompt(false);
-    } else {
+      sessionStorage.setItem('install-prompt-dismissed', 'true');
       setShowInstructions(true);
+      toast.error('Gagal menginstall. Coba manual melalui menu browser.');
+    } finally {
+      setInstalling(false);
     }
-    
-    setInstalling(false);
   };
 
   const handleShowInstructions = () => {
@@ -52,7 +87,8 @@ export default function InstallPrompt() {
     setShowInstructions(false);
   };
 
-  if (sessionStorage.getItem('install-prompt-dismissed')) {
+  // Jika sudah dismiss atau terinstall, tidak tampilkan
+  if (sessionStorage.getItem('install-prompt-dismissed') === 'true' || isInstalled()) {
     return null;
   }
 
@@ -106,7 +142,7 @@ export default function InstallPrompt() {
             <button
               onClick={handleDismiss}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Dismiss"
+              aria-label="Tutup"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
