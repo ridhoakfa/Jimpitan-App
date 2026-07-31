@@ -1,26 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { promptInstall, canInstall, isInstalled, getInstallInstructions } from '../utils/pwa';
 import { useToast } from '../hooks/useToast';
+
+// Konstanta untuk localStorage key
+const INSTALL_DISMISS_KEY = 'jimpitan_install_dismissed';
 
 export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [installing, setInstalling] = useState(false);
   const toast = useToast();
+  const installTimeoutRef = useRef(null);
+
+  // Cek apakah user sudah pernah dismiss dalam waktu tertentu (misal 1 jam)
+  const isDismissedRecently = () => {
+    const dismissed = localStorage.getItem(INSTALL_DISMISS_KEY);
+    if (!dismissed) return false;
+    try {
+      const { timestamp } = JSON.parse(dismissed);
+      // Jika dismiss kurang dari 1 jam, tidak tampilkan
+      if (Date.now() - timestamp < 60 * 60 * 1000) {
+        return true;
+      }
+    } catch (e) {
+      return false;
+    }
+    return false;
+  };
+
+  // Tandai dismiss
+  const setDismissed = () => {
+    localStorage.setItem(INSTALL_DISMISS_KEY, JSON.stringify({ timestamp: Date.now() }));
+  };
 
   useEffect(() => {
-    // Reset sessionStorage jika aplikasi sudah tidak terinstall (setelah uninstall)
-    if (!isInstalled()) {
-      sessionStorage.removeItem('install-prompt-dismissed');
-    }
-
-    // Jika sudah dismissed di session ini, jangan tampilkan
-    if (sessionStorage.getItem('install-prompt-dismissed') === 'true') {
-      return;
-    }
-
-    // Jika sudah terinstall, jangan tampilkan
-    if (isInstalled()) {
+    // Jika sudah terinstall atau baru saja dismiss, tidak tampilkan
+    if (isInstalled() || isDismissedRecently()) {
       return;
     }
 
@@ -30,13 +45,15 @@ export default function InstallPrompt() {
 
     window.addEventListener('pwa-install-available', handleInstallAvailable);
 
-    // Cek apakah bisa install
     if (canInstall()) {
       setShowPrompt(true);
     }
 
     return () => {
       window.removeEventListener('pwa-install-available', handleInstallAvailable);
+      if (installTimeoutRef.current) {
+        clearTimeout(installTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -45,7 +62,7 @@ export default function InstallPrompt() {
     const handleAppInstalled = () => {
       setShowPrompt(false);
       setInstalling(false);
-      sessionStorage.setItem('install-prompt-dismissed', 'true');
+      setDismissed(); // anggap sudah selesai
       toast.success('Aplikasi berhasil diinstall!');
     };
 
@@ -57,46 +74,46 @@ export default function InstallPrompt() {
   }, [toast]);
 
   const handleInstall = async () => {
-    // Cek jika sudah terinstall sebelum install
-    if (isInstalled()) {
-      sessionStorage.setItem('install-prompt-dismissed', 'true');
-      setShowPrompt(false);
-      toast.info('Aplikasi sudah terinstall.');
-      return;
-    }
-
     setInstalling(true);
+    // Set timeout untuk menghindari stuck
+    const timeoutPromise = new Promise((_, reject) => {
+      installTimeoutRef.current = setTimeout(() => {
+        reject(new Error('Install timeout'));
+      }, 30000); // 30 detik timeout
+    });
 
     try {
-      // Timeout untuk mencegah infinite loading
-      const installPromise = promptInstall();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Install timeout')), 30000)
-      );
-
-      const installed = await Promise.race([installPromise, timeoutPromise]);
-      
-      if (installed) {
+      const result = await Promise.race([promptInstall(), timeoutPromise]);
+      // Jika berhasil atau gagal (result false), kita tetap sembunyikan banner dan beri instruksi jika perlu
+      if (result === true) {
+        // Sukses install
         setShowPrompt(false);
-        sessionStorage.setItem('install-prompt-dismissed', 'true');
+        setDismissed();
         toast.success('Aplikasi berhasil diinstall!');
       } else {
-        // User membatalkan atau tidak ada prompt
+        // User membatalkan atau gagal
         setShowPrompt(false);
-        sessionStorage.setItem('install-prompt-dismissed', 'true');
+        setDismissed();
         // Tampilkan instruksi manual
         setShowInstructions(true);
         toast.info('Install dibatalkan. Anda bisa install manual melalui menu browser.');
       }
     } catch (error) {
+      // Timeout atau error lainnya
       console.error('Install error:', error);
-      setShowPrompt(false);
-      sessionStorage.setItem('install-prompt-dismissed', 'true');
-      // Tampilkan instruksi manual agar user tetap bisa install
+      // Jangan langsung hilangkan banner, tapi tampilkan instruksi
+      setInstalling(false); // hentikan spinner
       setShowInstructions(true);
-      toast.error('Gagal menginstall. Coba manual melalui menu browser.');
+      toast.error('Gagal menginstall. Silakan coba manual.');
+      // Kita tetap biarkan banner? Sebaiknya sembunyikan karena sudah muncul instruksi
+      setShowPrompt(false);
+      setDismissed();
     } finally {
       setInstalling(false);
+      if (installTimeoutRef.current) {
+        clearTimeout(installTimeoutRef.current);
+        installTimeoutRef.current = null;
+      }
     }
   };
 
@@ -106,15 +123,19 @@ export default function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    sessionStorage.setItem('install-prompt-dismissed', 'true');
+    setDismissed();
   };
 
   const handleCloseInstructions = () => {
     setShowInstructions(false);
   };
 
-  // Jika sudah dismiss, terinstall, atau tidak ada prompt
-  if (sessionStorage.getItem('install-prompt-dismissed') === 'true' || isInstalled() || !showPrompt) {
+  // Jika sudah dismiss atau terinstall, tidak tampilkan
+  if (isInstalled() || isDismissedRecently()) {
+    return null;
+  }
+
+  if (!showPrompt) {
     return null;
   }
 
@@ -155,7 +176,7 @@ export default function InstallPrompt() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span className="hidden sm:inline">Memproses...</span>
+                  <span className="hidden sm:inline">Installing...</span>
                 </>
               ) : (
                 'Install Sekarang'
