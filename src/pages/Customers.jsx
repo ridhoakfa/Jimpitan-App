@@ -226,6 +226,14 @@ export default function Customers({ onBack }) {
     }
   }
 
+  // ==========================================================
+  // FUNGSI UNTUK MENUTUP MODAL KONFIRMASI HAPUS
+  // ==========================================================
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setCustomerToDelete(null);
+  };
+
   function toggleCustomerSelection(customerId) {
     const newSelected = new Set(selectedCustomerIds);
     if (newSelected.has(customerId)) {
@@ -758,7 +766,9 @@ export default function Customers({ onBack }) {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* ========================================================== */}
+      {/* KONFIRMASI HAPUS — PERBAIKAN: gunakan onClose, bukan onCancel */}
+      {/* ========================================================== */}
       <ConfirmDialog
         isOpen={showDeleteConfirm}
         title="Hapus Customer"
@@ -770,10 +780,7 @@ export default function Customers({ onBack }) {
         confirmText="Hapus"
         cancelText="Batal"
         onConfirm={handleDeleteConfirm}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setCustomerToDelete(null);
-        }}
+        onClose={handleCancelDelete}   // <-- PERBAIKAN: onCancel → onClose
         type="danger"
       />
 
