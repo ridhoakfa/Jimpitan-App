@@ -432,8 +432,8 @@ function AppContent() {
       {/* ========================================================== */}
       {/* FOOTER — Selalu tampil */}
       {/* ========================================================== */}
-      <footer className="text-center text-xs py-2 md:py-3 text-gray-500 dark:text-gray-400 flex-shrink-0">
-        © 2026 Ridho Akbar Fadhilah
+      <footer className="text-center text-xs py-2 md:py-3 text-gray-500 dark:text-gray-400 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+      © 2026 KKN-R UNDIP Tim II • Ridho Akbar Fadhilah
       </footer>
 
       <TutorialModal
