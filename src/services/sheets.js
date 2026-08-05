@@ -2,15 +2,16 @@ import { requestQueue, requestCache, retryWithBackoff } from "./requestManager";
 import { measureAsync, apiMetrics } from "../utils/performance";
 import { safeLog, maskObject, maskToken } from "../utils/security";
 
-// SCRIPT_URL is provided via Vite environment variable `VITE_SCRIPT_URL`.
-// Set this in your local `.env` or your deployment environment.
 const SCRIPT_URL = import.meta.env.VITE_SCRIPT_URL || "";
 
 if (!SCRIPT_URL) {
-  // VITE_SCRIPT_URL is not set
+  console.warn('VITE_SCRIPT_URL tidak di-set. Pastikan file .env memiliki VITE_SCRIPT_URL');
 }
 
-const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 15000;
+// ==========================================================
+// PERBAIKAN: TIMEOUT DIPERBESAR MENJADI 30 DETIK
+// ==========================================================
+const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 30000;
 
 // Global token invalid handler
 let tokenInvalidHandler = null;
@@ -25,9 +26,9 @@ function handleTokenInvalid() {
   }
 }
 
-// ========================================
+// ==========================================================
 // HELPER FUNCTION FOR JSONP WITH QUEUE & CACHE
-// ========================================
+// ==========================================================
 
 function createJSONPRequest(action, params = {}, useCache = true) {
   // Generate cache key
@@ -62,7 +63,24 @@ function createJSONPRequest(action, params = {}, useCache = true) {
               .toString(36)
               .substr(2, 9)}`;
 
+            // ==========================================================
+            // PERBAIKAN: SET TIMEOUT LEBIH PANJANG
+            // ==========================================================
+            const timeoutId = setTimeout(() => {
+              if (window[callbackName]) {
+                delete window[callbackName];
+                if (script.parentNode) {
+                  document.body.removeChild(script);
+                }
+                const duration = performance.now() - startTime;
+                apiMetrics.track(action, duration, false);
+                reject(new Error("Request timeout."));
+              }
+            }, JSONP_TIMEOUT_MS);
+
             window[callbackName] = (data) => {
+              // Clear timeout
+              clearTimeout(timeoutId);
               delete window[callbackName];
               if (script.parentNode) {
                 document.body.removeChild(script);
@@ -119,6 +137,7 @@ function createJSONPRequest(action, params = {}, useCache = true) {
             script.async = true;
 
             script.onerror = () => {
+              clearTimeout(timeoutId);
               delete window[callbackName];
               if (script.parentNode) {
                 document.body.removeChild(script);
@@ -129,30 +148,18 @@ function createJSONPRequest(action, params = {}, useCache = true) {
             };
 
             document.body.appendChild(script);
-
-            setTimeout(() => {
-              if (window[callbackName]) {
-                delete window[callbackName];
-                if (script.parentNode) {
-                  document.body.removeChild(script);
-                }
-                const duration = performance.now() - startTime;
-                apiMetrics.track(action, duration, false);
-                reject(new Error("Request timeout."));
-              }
-            }, JSONP_TIMEOUT_MS);
           });
         },
-        2,
-        1000
+        3, // Retry 3 kali
+        1000 // Delay 1 detik
       )
     )
   );
 }
 
-// ========================================
+// ==========================================================
 // AUTH FUNCTIONS
-// ========================================
+// ==========================================================
 
 export async function loginWithSheet(username, password) {
   try {
@@ -318,8 +325,6 @@ export async function deleteUserInSheet(token, userId) {
 export async function bulkDeleteUsersInSheet(token, userIds) {
   requestCache.delete(`getUsers_${JSON.stringify({ token })}`);
 
-  // Use JSONP for bulk delete to get response back
-  // Pass userIds as JSON string since JSONP can't handle arrays directly
   return createJSONPRequest(
     "bulkDeleteUsers",
     {
@@ -330,12 +335,12 @@ export async function bulkDeleteUsersInSheet(token, userIds) {
   );
 }
 
-// ========================================
+// ==========================================================
 // TRANSACTION FUNCTIONS
-// ========================================
+// ==========================================================
 
 export async function submitToSheet(payload) {
-  requestCache.clear(); // Clear all cache after transaction
+  requestCache.clear();
 
   try {
     const response = await createJSONPRequest(
@@ -347,7 +352,7 @@ export async function submitToSheet(payload) {
         nominal: payload.nominal,
         user_id: payload.user_id,
         petugas: payload.petugas,
-        type: payload.type || 'daily'   // <--- INI YANG DITAMBAHKAN
+        type: payload.type || 'daily'
       },
       false
     );
@@ -368,7 +373,8 @@ export async function fetchHistoryFromSheet() {
       return [];
     }
   } catch (error) {
-    throw error;
+    console.warn('fetchHistoryFromSheet error:', error);
+    return [];
   }
 }
 
@@ -399,7 +405,6 @@ export async function deleteTransaction(token, txid) {
     throw new Error("Token dan TXID diperlukan");
   }
 
-  // Clear related caches
   requestCache.delete(`getUserTransactions_${token}`);
   requestCache.delete("getHistory_{}");
 
@@ -420,9 +425,9 @@ export async function deleteTransaction(token, txid) {
   }
 }
 
-// ========================================
+// ==========================================================
 // CUSTOMER MANAGEMENT FUNCTIONS
-// ========================================
+// ==========================================================
 
 export async function getCustomersFromSheet(skipCache = false) {
   try {
@@ -563,8 +568,6 @@ export async function deleteCustomerInSheet(token, customerId) {
 export async function bulkDeleteCustomersInSheet(token, customerIds) {
   requestCache.delete("getCustomers_{}");
 
-  // Use JSONP for bulk delete to get response back
-  // Pass customerIds as JSON string since JSONP can't handle arrays directly
   return createJSONPRequest(
     "bulkDeleteCustomers",
     {
@@ -652,9 +655,9 @@ export async function getUnpaidToday(token) {
   }
 }
 
-// ========================================
+// ==========================================================
 // CONFIG FUNCTIONS
-// ========================================
+// ==========================================================
 
 export async function getConfig(token) {
   try {
