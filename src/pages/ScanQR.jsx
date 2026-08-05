@@ -9,7 +9,7 @@ export default function ScanQR({ onBack, onNavigate }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const html5QrCodeRef = useRef(null);
-  const isScanningRef = useRef(false); // Use ref to avoid stale closure
+  const isScanningRef = useRef(false);
 
   const getScannerHeight = () => {
     if (window.innerWidth < 640) return '180px';
@@ -25,7 +25,6 @@ export default function ScanQR({ onBack, onNavigate }) {
     };
     window.addEventListener('resize', handleResize);
     
-    // Auto start scan on mount with slight delay to ensure DOM is ready
     const timer = setTimeout(() => {
       startScan();
     }, 100);
@@ -33,14 +32,11 @@ export default function ScanQR({ onBack, onNavigate }) {
     return () => {
       window.removeEventListener('resize', handleResize);
       clearTimeout(timer);
-      // Clean up scanner on unmount
       if (html5QrCodeRef.current) {
         try {
           html5QrCodeRef.current.stop().catch(() => {});
           html5QrCodeRef.current = null;
-        } catch (e) {
-          // Cleanup error ignored
-        }
+        } catch (e) {}
       }
     };
   }, []);
@@ -88,54 +84,46 @@ export default function ScanQR({ onBack, onNavigate }) {
       html5QrCodeRef.current = null;
       setMessage('');
     } catch (err) {
-      // Force cleanup even if error occurs
       html5QrCodeRef.current = null;
       setMessage('');
     }
   };
 
   const onScanSuccess = async (decodedText) => {
-    // Prevent multiple scans using ref (avoid stale closure)
     if (!isScanningRef.current) {
       return;
     }
     
-    // Scan hash customer (10 karakter hexadecimal)
     const cleanText = decodedText.trim();
       
     if (cleanText.length === 10 && /^[A-F0-9]+$/i.test(cleanText)) {
-      
-      // Stop immediately to prevent multiple scans
+      // Stop immediately
       setIsScanning(false);
       isScanningRef.current = false;
       
       const hashUpper = cleanText.toUpperCase();
       
+      // Tampilkan notifikasi sukses
+      toast.success('QR Code berhasil discan!');
+      
+      // Hentikan scanner
       if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop()
-          .then(() => {
-            html5QrCodeRef.current = null;
-            setMessage('QR Hash terdeteksi! Mengambil data customer...');
-            toast.success('QR Code berhasil discan!');
-            // Use state-based navigation with QR hash
-            if (onNavigate) {
-              onNavigate('submit', { qrHash: hashUpper });
-            }
-          })
-          .catch((e) => {
-            html5QrCodeRef.current = null;
-            toast.success('QR Code berhasil discan!');
-            // Use state-based navigation with QR hash
-            if (onNavigate) {
-              onNavigate('submit', { qrHash: hashUpper });
-            }
-          });
-      } else {
-        toast.success('QR Code berhasil discan!');
-        // Use state-based navigation with QR hash
-        if (onNavigate) {
-          onNavigate('submit', { qrHash: hashUpper });
+        try {
+          await html5QrCodeRef.current.stop();
+          html5QrCodeRef.current = null;
+        } catch (e) {
+          html5QrCodeRef.current = null;
         }
+      }
+      
+      setMessage('QR Hash terdeteksi! Mengambil data customer...');
+      
+      // Navigasi ke halaman Submit dengan qrHash
+      if (onNavigate) {
+        // Beri sedikit delay agar notifikasi terlihat
+        setTimeout(() => {
+          onNavigate('submit', { qrHash: hashUpper });
+        }, 300);
       }
     } else {
       setError(`Format hash tidak valid: "${cleanText}". Hash harus 10 karakter hexadecimal.`);

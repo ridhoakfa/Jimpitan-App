@@ -271,14 +271,12 @@ export default function Home({ onSetNavigate, onViewChange }) {
   // Efek untuk membaca state dari navigasi + localStorage
   // ==========================================================
   useEffect(() => {
-    // Prioritas: location.state > localStorage > default 'home'
     const stateView = location.state?.view;
     if (stateView) {
       setCurrentView(stateView);
       localStorage.setItem('jimpitan_last_view', stateView);
       window.history.replaceState({}, document.title);
     } else {
-      // Jika tidak ada state, cek localStorage
       const savedView = localStorage.getItem('jimpitan_last_view');
       if (savedView && savedView !== 'home') {
         setCurrentView(savedView);
@@ -297,6 +295,12 @@ export default function Home({ onSetNavigate, onViewChange }) {
 
   const handleNavigate = (view, data = null) => {
     setCurrentView(view);
+    // ==========================================================
+    // RESET qrHash jika navigasi ke scanqr atau home
+    // ==========================================================
+    if (view === 'scanqr' || view === 'home') {
+      setQrHash(null);
+    }
     if (view !== 'home') {
       localStorage.setItem('jimpitan_last_view', view);
     }

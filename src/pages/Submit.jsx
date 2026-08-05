@@ -7,25 +7,33 @@ import { getCustomerByQRHash, submitToSheet, getConfig } from '../services/sheet
 import { useNavigate } from 'react-router-dom';
 
 export default function Submit({ onBack, qrHash: propsQrHash }) {
-  const { currentUser, token } = useAuth();
+  const { currentUser, token, isAdmin } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     nominal: '',
-    type: 'daily' // default: harian
+    type: 'daily'
   });
   const [defaultNominal, setDefaultNominal] = useState(500);
   const [configLoaded, setConfigLoaded] = useState(false);
 
   const qrHash = propsQrHash;
 
-  // Ambil config default_nominal dari backend
+  // Ambil config default_nominal dari backend (hanya untuk admin)
   useEffect(() => {
     const fetchConfig = async () => {
+      // Hanya admin yang boleh mengambil config
+      if (!isAdmin) {
+        setDefaultNominal(500);
+        setFormData(prev => ({ ...prev, nominal: '500' }));
+        setConfigLoaded(true);
+        return;
+      }
       try {
         const result = await getConfig(token);
         if (result.status === 'success' && result.data && result.data.default_nominal) {
@@ -36,28 +44,29 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
           setFormData(prev => ({ ...prev, nominal: '500' }));
         }
       } catch (err) {
-        console.warn('Gagal load config, pakai default 500', err);
+        console.warn('Gagal load config, pakai default 500');
         setFormData(prev => ({ ...prev, nominal: '500' }));
       }
       setConfigLoaded(true);
     };
-    if (token) {
-      fetchConfig();
-    } else {
-      setFormData(prev => ({ ...prev, nominal: '500' }));
-      setConfigLoaded(true);
-    }
-  }, [token]);
+    fetchConfig();
+  }, [token, isAdmin]);
 
+  // Load customer data saat qrHash berubah atau komponen mount
   useEffect(() => {
+    // Jika sudah submit, tidak perlu load ulang data
+    if (submitted) {
+      setLoading(false);
+      return;
+    }
+
     if (!qrHash) {
-      toast.warning('QR Hash tidak ditemukan', 'Silakan scan QR Code terlebih dahulu');
       setLoading(false);
       return;
     }
 
     loadCustomerData();
-  }, [qrHash]);
+  }, [qrHash, submitted]);
 
   async function loadCustomerData() {
     try {
@@ -68,6 +77,8 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
         setCustomer(response.data);
       } else {
         toast.error('Customer tidak ditemukan', 'QR Code tidak valid atau customer telah dihapus');
+        // Redirect ke scan QR setelah error
+        setTimeout(() => navigate('/', { state: { view: 'scanqr' } }), 1500);
       }
     } catch (error) {
       toast.error('Gagal memuat data customer', error.message);
@@ -84,7 +95,6 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
     }));
   }
 
-  // Set nominal ke default
   function setNominalDefault() {
     setFormData(prev => ({
       ...prev,
@@ -122,21 +132,20 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
         nominal: nominal,
         user_id: currentUser.id,
         petugas: currentUser.name,
-        type: formData.type // <--- kirim tipe transaksi
+        type: formData.type
       };
 
       const response = await submitToSheet(payload);
       
       if (response.status === 'success') {
         toast.success('Transaksi berhasil dicatat!');
-        // Reset ke default setelah sukses
+        setSubmitted(true);
+        // Reset form
         setFormData({ 
           nominal: defaultNominal.toString(),
-          type: 'daily' // reset ke harian
+          type: 'daily'
         });
-        setTimeout(() => {
-          navigate('/my-history');
-        }, 1500);
+        // TIDAK LANGSUNG NAVIGATE — biar user pilih tombol
       } else {
         toast.error(response.message || 'Gagal menyimpan transaksi');
       }
@@ -148,6 +157,9 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
     }
   }
 
+  // ============================================================
+  // RENDER: Jika loading
+  // ============================================================
   if (loading || !configLoaded) {
     return (
       <PageLayout title="Submit Transaksi" subtitle="Mencatat jimpitan warga" onBack={onBack}>
@@ -156,6 +168,51 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
     );
   }
 
+  // ============================================================
+  // RENDER: Setelah submit berhasil (halaman sukses)
+  // ============================================================
+  if (submitted) {
+    return (
+      <PageLayout title="Submit Transaksi" subtitle="Mencatat jimpitan warga" onBack={onBack}>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 text-center border-2 border-green-200 dark:border-green-700">
+          <div className="text-6xl mb-4">✅</div>
+          <h3 className="text-xl font-bold text-green-800 dark:text-green-200 mb-2">
+            Transaksi Berhasil!
+          </h3>
+          <p className="text-green-700 dark:text-green-300 mb-4">
+            {customer ? `Customer ${customer.nama} telah dicatat.` : 'Silakan scan QR code berikutnya.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => {
+                // Reset qrHash dengan navigasi ke scanqr via Home
+                navigate('/', { state: { view: 'scanqr' } });
+              }}
+              className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              📷 Scan Lagi
+            </button>
+            <button
+              onClick={() => navigate('/', { state: { view: 'myhistory' } })}
+              className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+            >
+              📝 Lihat Riwayat
+            </button>
+            <button
+              onClick={() => navigate('/', { state: { view: 'home' } })}
+              className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+            >
+              🏠 Home
+            </button>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // ============================================================
+  // RENDER: Jika tidak ada qrHash (belum scan)
+  // ============================================================
   if (!qrHash) {
     return (
       <PageLayout title="Submit Transaksi" subtitle="Mencatat jimpitan warga" onBack={onBack}>
@@ -168,7 +225,7 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
             Silakan scan QR Code customer terlebih dahulu
           </p>
           <button
-            onClick={() => navigate('/scan-qr')}
+            onClick={() => navigate('/', { state: { view: 'scanqr' } })}
             className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-colors"
           >
             Scan QR Code
@@ -178,6 +235,9 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
     );
   }
 
+  // ============================================================
+  // RENDER: Jika customer tidak ditemukan
+  // ============================================================
   if (!customer) {
     return (
       <PageLayout title="Submit Transaksi" subtitle="Mencatat jimpitan warga" onBack={onBack}>
@@ -200,6 +260,9 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
     );
   }
 
+  // ============================================================
+  // RENDER: Form Submit (normal)
+  // ============================================================
   return (
     <PageLayout title="Submit Transaksi" subtitle="Mencatat jimpitan warga" onBack={onBack}>
       <div className="max-w-2xl mx-auto">
@@ -232,9 +295,7 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
         {/* Form Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6">
           <form onSubmit={handleSubmit}>
-            {/* ========================================================== */}
-            {/* TIPE TRANSAKSI (BARU) */}
-            {/* ========================================================== */}
+            {/* Tipe Transaksi */}
             <div className="mb-4 md:mb-6">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 📋 Tipe Transaksi
@@ -287,7 +348,6 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
                 💰 Nominal Setoran <span className="text-red-500">*</span>
               </label>
               
-              {/* Tombol cepat 500 (sesuai default) */}
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <button
                   type="button"
@@ -336,11 +396,11 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
             <div className="flex gap-2 md:gap-3">
               <button
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/', { state: { view: 'scanqr' } })}
                 disabled={submitting}
                 className="flex-1 px-4 md:px-6 py-2.5 md:py-3 bg-gray-500 hover:bg-gray-600 text-white text-sm md:text-base font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Batal
+                Kembali Scan
               </button>
               <button
                 type="submit"
@@ -363,7 +423,6 @@ export default function Submit({ onBack, qrHash: propsQrHash }) {
           </form>
         </div>
 
-        {/* Info Box */}
         <div className="mt-3 md:mt-6 p-3 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             💡 Transaksi akan tercatat atas nama <strong>{currentUser?.name}</strong>
