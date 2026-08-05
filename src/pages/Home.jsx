@@ -157,53 +157,61 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
             </div>
           </div>
 
-          {/* Quick Actions for Petugas - 3 columns */}
+          {/* ========================================================== */}
+          {/* QUICK ACTIONS FOR PETUGAS - LAYOUT BARU                   */}
+          {/* ========================================================== */}
           {!isAdmin && (
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <button
-                onClick={() => onNavigate('scanqr')}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                    </svg>
+            <div className="mb-4">
+              {/* Baris 1: 2 tombol dalam 2 kolom */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <button
+                  onClick={() => onNavigate('scanqr')}
+                  className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Scan QR</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Scan kode nasabah</p>
-              </button>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Scan QR</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Scan kode nasabah</p>
+                </button>
 
-              <button
-                onClick={() => onNavigate('myhistory')}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                <button
+                  onClick={() => onNavigate('myhistory')}
+                  className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Riwayat Saya</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Setoran saya</p>
-              </button>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Riwayat Saya</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Setoran saya</p>
+                </button>
+              </div>
 
-              <button
-                onClick={() => window.location.href = '/dashboard-petugas'}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-yellow-200/50 dark:border-yellow-700/30 hover:shadow-xl hover:border-yellow-400/70 dark:hover:border-yellow-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
+              {/* Baris 2: Tugas Hari Ini - full width, centered */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => window.location.href = '/dashboard-petugas'}
+                  className="w-full sm:w-1/2 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-yellow-200/50 dark:border-yellow-700/30 hover:shadow-xl hover:border-yellow-400/70 dark:hover:border-yellow-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Tugas Hari Ini</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Lihat target setoran</p>
-              </button>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Tugas Hari Ini</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Lihat target setoran</p>
+                </button>
+              </div>
             </div>
           )}
 
@@ -295,9 +303,7 @@ export default function Home({ onSetNavigate, onViewChange }) {
 
   const handleNavigate = (view, data = null) => {
     setCurrentView(view);
-    // ==========================================================
     // RESET qrHash jika navigasi ke scanqr atau home
-    // ==========================================================
     if (view === 'scanqr' || view === 'home') {
       setQrHash(null);
     }
