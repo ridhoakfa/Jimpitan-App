@@ -3,6 +3,7 @@ import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth.jsx';
 import { useDarkMode } from './hooks/useDarkMode.jsx';
+import { useToast } from './hooks/useToast.jsx';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy load pages
@@ -18,8 +19,10 @@ const Login = lazy(() => import('./pages/Login'));
 function AppContent() {
   const { currentUser, logout, isAdmin } = useAuth();
   const { isDark, toggleTheme } = useDarkMode();
+  const toast = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const homeNavigateRef = useRef(null);
@@ -43,10 +46,23 @@ function AppContent() {
     setShowTutorial(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     closeMobileMenu();
-    logout();
-    navigate('/login');
+    
+    try {
+      // Tampilkan toast loading
+      toast.info('Logging out...');
+      await logout();
+      toast.success('Logout berhasil!');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Gagal logout, coba lagi');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   // ==========================================================
@@ -54,6 +70,10 @@ function AppContent() {
   // ==========================================================
   const navigateToHomeView = (view) => {
     closeMobileMenu();
+    // Simpan view ke localStorage agar bertahan saat refresh
+    if (view) {
+      localStorage.setItem('jimpitan_last_view', view);
+    }
     navigate('/', { state: { view } });
   };
 
@@ -67,8 +87,6 @@ function AppContent() {
   const isDashboardPetugasActive = () => {
     return location.pathname === '/dashboard-petugas';
   };
-
-  const isLoginPage = location.pathname === '/login';
 
   const getActiveButtonClass = (view) => {
     const baseClass = "px-3 py-2 rounded-lg font-medium transition-all";
@@ -88,16 +106,9 @@ function AppContent() {
   };
 
   return (
-    // ==========================================================
-    // TAMBAHKAN pb-20 HANYA JIKA SUDAH LOGIN (currentUser ada)
-    // Agar footer tidak tertutup InstallPrompt di halaman Login
-    // ==========================================================
     <div className={`h-screen flex flex-col bg-gradient-to-br from-white via-red-50/20 to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden ${currentUser ? 'pb-20' : ''}`}>
-      {/* ========================================================== */}
-      {/* NAVBAR — Selalu tampil, termasuk di halaman Login */}
-      {/* ========================================================== */}
+      {/* Navbar */}
       <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg shadow-slate-200/50 dark:shadow-none border-b border-slate-200/60 dark:border-gray-700/60 py-3 px-4 md:py-4 md:px-6 flex justify-between items-center flex-shrink-0 relative z-50">
-        {/* Judul Aplikasi */}
         <button
           onClick={() => navigateToHomeView('home')}
           className="font-bold text-lg md:text-xl bg-gradient-to-r from-red-600 to-red-700 dark:from-red-400 dark:to-red-500 text-transparent bg-clip-text hover:from-red-700 hover:to-red-800 transition-all cursor-pointer"
@@ -105,10 +116,9 @@ function AppContent() {
           Jimpitan App
         </button>
 
-        {/* ===== DESKTOP MENU ===== */}
+        {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-2 text-sm font-medium">
           {currentUser ? (
-            // Jika sudah login
             <>
               <button
                 onClick={() => navigateToHomeView('home')}
@@ -169,8 +179,6 @@ function AppContent() {
                 </svg>
                 Tutorial
               </button>
-
-              {/* Tombol Konfigurasi (Admin) */}
               {isAdmin && (
                 <button
                   onClick={() => navigateToHomeView('config')}
@@ -182,8 +190,6 @@ function AppContent() {
                   </svg>
                 </button>
               )}
-
-              {/* User Avatar & Logout */}
               <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-gray-600">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm">
@@ -195,19 +201,25 @@ function AppContent() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="p-2.5 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-900/30 dark:to-gray-800/30 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-900/50 dark:hover:to-gray-800/50 text-gray-600 dark:text-gray-400 transition-all hover:shadow-md"
+                  disabled={isLoggingOut}
+                  className="p-2.5 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-900/30 dark:to-gray-800/30 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-900/50 dark:hover:to-gray-800/50 text-gray-600 dark:text-gray-400 transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Logout"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                  {isLoggingOut ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </>
           ) : (
-            // Jika BELUM login (halaman Login)
             <div className="flex items-center gap-3">
-              {/* Hanya tombol tema dan tombol Login */}
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200"
@@ -233,9 +245,8 @@ function AppContent() {
           )}
         </div>
 
-        {/* ===== MOBILE CONTROLS (hanya muncul jika sudah login) ===== */}
+        {/* Mobile Controls */}
         <div className="md:hidden flex items-center gap-2">
-          {/* Tombol tema tetap muncul di mobile */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-800/20 hover:shadow-md transition-all duration-200"
@@ -251,8 +262,6 @@ function AppContent() {
               </svg>
             )}
           </button>
-
-          {/* Tombol Config (Admin) di mobile jika login */}
           {currentUser && isAdmin && (
             <button
               onClick={() => navigateToHomeView('config')}
@@ -264,8 +273,6 @@ function AppContent() {
               </svg>
             </button>
           )}
-
-          {/* Tombol hamburger HANYA muncul jika sudah login */}
           {currentUser && (
             <button
               onClick={toggleMobileMenu}
@@ -286,9 +293,7 @@ function AppContent() {
         </div>
       </nav>
 
-      {/* ========================================================== */}
-      {/* MOBILE MENU OVERLAY — hanya muncul jika login & menu terbuka */}
-      {/* ========================================================== */}
+      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && currentUser && (
         <>
           <div
@@ -392,11 +397,19 @@ function AppContent() {
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 rounded-lg flex items-center gap-2 font-medium"
+                      disabled={isLoggingOut}
+                      className="w-full text-left px-3 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 rounded-lg flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
+                      {isLoggingOut ? (
+                        <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                      )}
                       <span>Logout</span>
                     </button>
                   </>
@@ -407,9 +420,7 @@ function AppContent() {
         </>
       )}
 
-      {/* ========================================================== */}
-      {/* MAIN CONTENT */}
-      {/* ========================================================== */}
+      {/* Main Content */}
       <main className="flex-1 flex p-3 md:p-6 overflow-hidden">
         <div className="w-full h-full overflow-auto">
           <Suspense fallback={<LoadingSpinner fullscreen loading text="Memuat halaman..." />}>
@@ -433,9 +444,7 @@ function AppContent() {
         </div>
       </main>
 
-      {/* ========================================================== */}
-      {/* FOOTER — Selalu tampil */}
-      {/* ========================================================== */}
+      {/* Footer */}
       <footer className="text-center text-xs py-2 md:py-3 text-gray-500 dark:text-gray-400 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
         © 2026 KKN-R UNDIP Tim II • Ridho Akbar Fadhilah
       </footer>
