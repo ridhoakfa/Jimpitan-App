@@ -36,10 +36,10 @@ export default function History({ onBack }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [periode, setPeriode] = useState(''); // 'hari', 'minggu', 'bulan', 'tahun', 'custom'
+  const [periode, setPeriode] = useState('');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
-  const [tipe, setTipe] = useState('all'); // 'all', 'daily', 'monthly', 'yearly'
+  const [tipe, setTipe] = useState('all');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -71,7 +71,6 @@ export default function History({ onBack }) {
     loadTransactions();
   }, []);
 
-  // Handle Delete
   const handleDeleteClick = (tx) => {
     setSelectedTransaction(tx);
     setShowDeleteConfirm(true);
@@ -90,7 +89,6 @@ export default function History({ onBack }) {
     try {
       const result = await deleteTransaction(token, selectedTransaction.txid);
       if (result.status === 'success') {
-        // Hanya satu notifikasi sukses
         toast.success('Transaksi berhasil dihapus');
         setShowDeleteConfirm(false);
         setSelectedTransaction(null);
@@ -113,23 +111,17 @@ export default function History({ onBack }) {
     setSelectedTransaction(null);
   };
 
-  // ============================================================
-  // FILTER TRANSACTIONS
-  // ============================================================
   const filteredTransactions = transactions.filter(tx => {
-    // Filter teks
     const matchesSearch =
       tx.nama?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.petugas?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filter tipe transaksi
     let matchesType = true;
     if (tipe !== 'all') {
       matchesType = tx.type === tipe;
     }
 
-    // Filter periode (menggunakan tanggal jimpitan)
     let matchesPeriode = true;
     const txDate = new Date(tx.timestamp);
     if (!isNaN(txDate.getTime())) {
@@ -172,9 +164,6 @@ export default function History({ onBack }) {
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
   });
 
-  // ============================================================
-  // RENDER
-  // ============================================================
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -403,7 +392,9 @@ export default function History({ onBack }) {
               </div>
             </div>
 
-            {/* Filter */}
+            {/* ========================================================== */}
+            {/* FILTER — PERBAIKAN MOBILE: 2 KOLOM DI HP, 4 DI DESKTOP */}
+            {/* ========================================================== */}
             <div className="space-y-2 mb-3">
               <div className="relative">
                 <input
@@ -418,11 +409,12 @@ export default function History({ onBack }) {
                 </svg>
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
+              {/* Grid: 2 kolom di HP, 4 kolom di tablet/desktop */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <select
                   value={periode}
                   onChange={(e) => setPeriode(e.target.value)}
-                  className="px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
+                  className="col-span-2 md:col-span-1 px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                 >
                   <option value="">Semua Periode</option>
                   <option value="hari">Hari Ini</option>
@@ -435,7 +427,7 @@ export default function History({ onBack }) {
                 <select
                   value={tipe}
                   onChange={(e) => setTipe(e.target.value)}
-                  className="px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
+                  className="col-span-2 md:col-span-1 px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                 >
                   <option value="all">Semua Tipe</option>
                   <option value="daily">Harian</option>
@@ -562,7 +554,7 @@ export default function History({ onBack }) {
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
         variant="danger"
-        title=" Hapus Transaksi"
+        title="⚠️ Hapus Transaksi"
         subtitle="Tindakan ini tidak dapat dibatalkan"
         message={`Apakah Anda yakin ingin menghapus transaksi untuk "${selectedTransaction?.nama || ''}" (Rp ${selectedTransaction?.nominal?.toLocaleString() || 0})?`}
         additionalInfo={selectedTransaction?.petugas ? `Petugas: ${selectedTransaction.petugas}` : ''}
