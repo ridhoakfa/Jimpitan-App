@@ -406,7 +406,7 @@ function AppContent() {
       {/* ========================================================== */}
       {/* MAIN CONTENT */}
       {/* ========================================================== */}
-      <main className="flex-1 flex p-3 md:p-6 overflow-hidden">
+      <main className="flex-1 flex p-3 md:p-6 overflow-hidden pb-16">
         <div className="w-full h-full overflow-auto">
           <Suspense fallback={<LoadingSpinner fullscreen loading text="Memuat halaman..." />}>
             <Routes>

@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
-import { useLocation } from 'react-router-dom'; // <-- tambahkan
+import { useLocation, useNavigate } from 'react-router-dom'; // <-- tambahkan useNavigate
 import TutorialModal from '../components/TutorialModal.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 
@@ -15,10 +15,11 @@ const Config = lazy(() => import('./Config'));
 
 function HomeView({ onNavigate, isAdmin, currentUser }) {
   const [showTutorial, setShowTutorial] = useState(false);
+  const navigate = useNavigate(); // tambahkan untuk navigasi ke dashboard petugas
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-b from-red-50 via-white to-red-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 px-3 py-4 pb-28 sm:pb-20 transition-colors duration-300">
+      <div className="min-h-screen bg-gradient-to-b from-red-50 via-white to-red-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 px-3 py-4 pb-20 sm:pb-16 transition-colors duration-300">
         <div className="max-w-2xl mx-auto">
           {/* Bold Header Banner */}
           <div className="bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 rounded-3xl shadow-2xl p-6 mb-4 border-2 border-red-400 dark:border-red-700">
@@ -168,7 +169,7 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
 
           {/* Quick Actions for Petugas */}
           {!isAdmin && (
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-3 gap-3 mb-4">
               <button
                 onClick={() => onNavigate('scanqr')}
                 className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
@@ -197,6 +198,22 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
                 </div>
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Riwayat Saya</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Setoran saya</p>
+              </button>
+
+              {/* ===== TAMBAHAN: TUGAS HARI INI ===== */}
+              <button
+                onClick={() => navigate('/dashboard-petugas')}
+                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-yellow-200/50 dark:border-yellow-700/30 hover:shadow-xl hover:border-yellow-400/70 dark:hover:border-yellow-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Tugas Hari Ini</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Lihat target setoran</p>
               </button>
             </div>
           )}
