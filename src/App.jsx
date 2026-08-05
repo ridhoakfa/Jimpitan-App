@@ -88,7 +88,11 @@ function AppContent() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-white via-red-50/20 to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden">
+    // ==========================================================
+    // TAMBAHKAN pb-20 HANYA JIKA SUDAH LOGIN (currentUser ada)
+    // Agar footer tidak tertutup InstallPrompt di halaman Login
+    // ==========================================================
+    <div className={`h-screen flex flex-col bg-gradient-to-br from-white via-red-50/20 to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden ${currentUser ? 'pb-20' : ''}`}>
       {/* ========================================================== */}
       {/* NAVBAR — Selalu tampil, termasuk di halaman Login */}
       {/* ========================================================== */}
@@ -406,7 +410,7 @@ function AppContent() {
       {/* ========================================================== */}
       {/* MAIN CONTENT */}
       {/* ========================================================== */}
-      <main className="flex-1 flex p-3 md:p-6 overflow-hidden pb-16">
+      <main className="flex-1 flex p-3 md:p-6 overflow-hidden">
         <div className="w-full h-full overflow-auto">
           <Suspense fallback={<LoadingSpinner fullscreen loading text="Memuat halaman..." />}>
             <Routes>
@@ -433,7 +437,7 @@ function AppContent() {
       {/* FOOTER — Selalu tampil */}
       {/* ========================================================== */}
       <footer className="text-center text-xs py-2 md:py-3 text-gray-500 dark:text-gray-400 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
-      © 2026 KKN-R UNDIP Tim II • Ridho Akbar Fadhilah
+        © 2026 KKN-R UNDIP Tim II • Ridho Akbar Fadhilah
       </footer>
 
       <TutorialModal

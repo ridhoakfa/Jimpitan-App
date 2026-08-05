@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
-import { useLocation, useNavigate } from 'react-router-dom'; // <-- tambahkan useNavigate
+import { useLocation, useNavigate } from 'react-router-dom';
 import TutorialModal from '../components/TutorialModal.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 
@@ -15,7 +15,7 @@ const Config = lazy(() => import('./Config'));
 
 function HomeView({ onNavigate, isAdmin, currentUser }) {
   const [showTutorial, setShowTutorial] = useState(false);
-  const navigate = useNavigate(); // tambahkan untuk navigasi ke dashboard petugas
+  const navigate = useNavigate();
 
   return (
     <>
@@ -23,7 +23,6 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
         <div className="max-w-2xl mx-auto">
           {/* Bold Header Banner */}
           <div className="bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 rounded-3xl shadow-2xl p-6 mb-4 border-2 border-red-400 dark:border-red-700">
-            {/* Logo/Icon */}
             <div className="flex items-center justify-between mb-4">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,7 +35,6 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
               </div>
             </div>
 
-            {/* Welcome Text */}
             <h2 className="text-xl font-bold text-white mb-1">
               Halo{currentUser && `, ${currentUser.name}`} 👋
             </h2>
@@ -46,7 +44,6 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
                 : 'Lakukan scan QR dan catat transaksi jimpitan dengan mudah.'}
             </p>
 
-            {/* Quick Action Button */}
             {!isAdmin && (
               <button
                 onClick={() => onNavigate('scanqr')}
@@ -125,14 +122,12 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
             </div>
           )}
 
-          {/* Promo Corner / Features Section */}
+          {/* Features */}
           <div className="mb-4">
             <h3 className="text-lg font-black text-slate-800 dark:text-white mb-3 flex items-center gap-2">
               <span className="text-2xl">⭐</span> Fitur Unggulan
             </h3>
-            
             <div className="space-y-2">
-              {/* Feature 1 */}
               <div className="bg-gradient-to-r from-red-500/80 to-orange-500/80 dark:from-red-700/70 dark:to-orange-700/70 backdrop-blur-md rounded-2xl p-4 shadow-lg border-2 border-red-300/50 dark:border-red-600/30 hover:shadow-xl transition-all">
                 <div className="flex items-start justify-between">
                   <div>
@@ -142,8 +137,6 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
                   <span className="text-2xl">📱</span>
                 </div>
               </div>
-
-              {/* Feature 2 */}
               <div className="bg-gradient-to-r from-yellow-500/80 to-amber-500/80 dark:from-yellow-700/70 dark:to-amber-700/70 backdrop-blur-md rounded-2xl p-4 shadow-lg border-2 border-yellow-300/50 dark:border-yellow-600/30 hover:shadow-xl transition-all">
                 <div className="flex items-start justify-between">
                   <div>
@@ -153,8 +146,6 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
                   <span className="text-2xl">🔒</span>
                 </div>
               </div>
-
-              {/* Feature 3 */}
               <div className="bg-gradient-to-r from-green-500/80 to-emerald-500/80 dark:from-green-700/70 dark:to-emerald-700/70 backdrop-blur-md rounded-2xl p-4 shadow-lg border-2 border-green-300/50 dark:border-green-600/30 hover:shadow-xl transition-all">
                 <div className="flex items-start justify-between">
                   <div>
@@ -167,58 +158,64 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
             </div>
           </div>
 
-          {/* Quick Actions for Petugas */}
+          {/* ========================================================== */}
+          {/* QUICK ACTIONS FOR PETUGAS — 2 KOLOM + 1 DI TENGAH */}
+          {/* ========================================================== */}
           {!isAdmin && (
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <button
-                onClick={() => onNavigate('scanqr')}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                    </svg>
+            <>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <button
+                  onClick={() => onNavigate('scanqr')}
+                  className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Scan QR</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Scan kode nasabah</p>
-              </button>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Scan QR</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Scan kode nasabah</p>
+                </button>
 
-              <button
-                onClick={() => onNavigate('myhistory')}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
-              >
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                <button
+                  onClick={() => onNavigate('myhistory')}
+                  className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-red-200/50 dark:border-red-700/30 hover:shadow-xl hover:border-red-400/70 dark:hover:border-red-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-red-500 to-red-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Riwayat Saya</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Setoran saya</p>
-              </button>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Riwayat Saya</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Setoran saya</p>
+                </button>
+              </div>
 
-              {/* ===== TAMBAHAN: TUGAS HARI INI ===== */}
-              <button
-                onClick={() => navigate('/dashboard-petugas')}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-yellow-200/50 dark:border-yellow-700/30 hover:shadow-xl hover:border-yellow-400/70 dark:hover:border-yellow-600/50 transition-all duration-200 cursor-pointer hover:scale-105"
-              >
-                <div className="flex items-center justify-center mb-2">
+              {/* ===== TUGAS HARI INI — DILETAKKAN DI TENGAH ===== */}
+              <div className="flex justify-center mb-4">
+                <button
+                  onClick={() => navigate('/dashboard-petugas')}
+                  className="w-full sm:w-1/2 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-4 border-2 border-yellow-200/50 dark:border-yellow-700/30 hover:shadow-xl hover:border-yellow-400/70 dark:hover:border-yellow-600/50 transition-all duration-200 cursor-pointer hover:scale-105 flex items-center justify-center gap-3"
+                >
                   <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
                   </div>
-                </div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1 text-center">Tugas Hari Ini</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Lihat target setoran</p>
-              </button>
-            </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tugas Hari Ini</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Lihat target setoran</p>
+                  </div>
+                </button>
+              </div>
+            </>
           )}
 
-          {/* CTA Button */}
+          {/* Tutorial Button */}
           <div className="flex justify-center mb-2">
             <button
               onClick={() => setShowTutorial(true)}
@@ -263,14 +260,13 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
         </div>
       </div>
 
-      {/* Tutorial Modal */}
       <TutorialModal
         isOpen={showTutorial}
         onClose={() => setShowTutorial(false)}
         userRole={isAdmin ? 'admin' : 'petugas'}
       />
     </>
-);
+  );
 }
 
 export default function Home({ onSetNavigate, onViewChange }) {
@@ -279,12 +275,10 @@ export default function Home({ onSetNavigate, onViewChange }) {
   const [currentView, setCurrentView] = useState('home');
   const [qrHash, setQrHash] = useState(null);
 
-  // Efek untuk membaca state dari navigasi (dari App.jsx)
   useEffect(() => {
     const view = location.state?.view;
     if (view) {
       setCurrentView(view);
-      // Hapus state agar tidak mengganggu navigasi berikutnya
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -301,14 +295,12 @@ export default function Home({ onSetNavigate, onViewChange }) {
     setQrHash(null);
   };
 
-  // Expose navigation function to App.jsx
   useEffect(() => {
     if (onSetNavigate) {
       onSetNavigate(handleNavigate);
     }
   }, [onSetNavigate]);
 
-  // Notify parent when view changes
   useEffect(() => {
     if (onViewChange) {
       onViewChange(currentView);
