@@ -193,7 +193,7 @@ function AppContent() {
           onClick={() => navigateToHomeView('home')}
           className="font-bold text-lg md:text-xl bg-gradient-to-r from-red-600 to-red-700 dark:from-red-400 dark:to-red-500 text-transparent bg-clip-text hover:from-red-700 hover:to-red-800 transition-all cursor-pointer"
         >
-          Jimpitan App
+          Aplikasi Jimpitan
         </button>
 
         {/* Desktop Menu */}
