@@ -44,7 +44,6 @@ function AppContent() {
       toast.success('Logout otomatis berhasil');
     } catch (error) {
       console.error('Idle logout error:', error);
-      // Tetap redirect meskipun error
       navigate('/login', { replace: true });
     } finally {
       setIsLoggingOut(false);
@@ -93,22 +92,39 @@ function AppContent() {
   }, [location]);
 
   // ==========================================================
-  // LOGOUT MANUAL
+  // LOGOUT MANUAL DENGAN TIMEOUT FALLBACK & OVERLAY
   // ==========================================================
+  const performLogout = async () => {
+    // Coba logout, tapi dengan timeout 3 detik
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Logout timeout')), 3000);
+    });
+
+    try {
+      // Race antara logout dan timeout
+      await Promise.race([logout(), timeoutPromise]);
+      navigate('/login', { replace: true });
+      toast.success('Logout berhasil!');
+    } catch (error) {
+      console.warn('Logout timeout or error, forcing redirect:', error);
+      // Tetap redirect ke login meskipun ada error
+      navigate('/login', { replace: true });
+      toast.info('Session berakhir, silakan login kembali');
+    }
+  };
+
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     closeMobileMenu();
+
     try {
-      toast.info('Logging out...');
-      await logout();
-      navigate('/login', { replace: true });
-      toast.success('Logout berhasil!');
+      // Tampilkan overlay (sudah di-render oleh state isLoggingOut)
+      await performLogout();
     } catch (error) {
       console.error('Logout error:', error);
-      // Tetap redirect meskipun error
+      // Tetap redirect
       navigate('/login', { replace: true });
-      toast.error('Gagal logout, silakan coba lagi');
     } finally {
       setIsLoggingOut(false);
     }
@@ -521,10 +537,10 @@ function AppContent() {
       <InstallPrompt />
 
       {/* ========================================================== */}
-      {/* OVERLAY LOADING SAAT LOGOUT */}
+      {/* OVERLAY LOADING SAAT LOGOUT — MENGGUNAKAN LoadingSpinner */}
       {/* ========================================================== */}
       {isLoggingOut && (
-        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
             <LoadingSpinner fullscreen={false} loading text="Logging out..." />
           </div>
