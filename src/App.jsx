@@ -28,10 +28,102 @@ function AppContent() {
   const homeNavigateRef = useRef(null);
   const [currentView, setCurrentView] = useState('home');
 
-  // Tutup mobile menu saat route berubah
+  // ==========================================================
+  // AUTO LOGOUT IDLE 30 MENIT
+  // ==========================================================
+  const idleTimerRef = useRef(null);
+  const IDLE_TIMEOUT = 30 * 60 * 1000;
+
+  const handleIdleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      toast.info('Session Anda telah berakhir karena tidak ada aktivitas selama 30 menit.');
+      await logout();
+      navigate('/login', { replace: true });
+      toast.success('Logout otomatis berhasil');
+    } catch (error) {
+      console.error('Idle logout error:', error);
+      // Tetap redirect meskipun error
+      navigate('/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const resetIdleTimer = () => {
+    if (!currentUser) return;
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+    idleTimerRef.current = setTimeout(handleIdleLogout, IDLE_TIMEOUT);
+  };
+
   useEffect(() => {
-    setIsMobileMenuOpen(false);
+    if (!currentUser) return;
+    const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'scroll', 'click', 'keyup', 'wheel'];
+    const reset = () => resetIdleTimer();
+    resetIdleTimer();
+    events.forEach(event => window.addEventListener(event, reset));
+    return () => {
+      events.forEach(event => window.removeEventListener(event, reset));
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        resetIdleTimer();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      resetIdleTimer();
+    }
   }, [location]);
+
+  // ==========================================================
+  // LOGOUT MANUAL
+  // ==========================================================
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    closeMobileMenu();
+    try {
+      toast.info('Logging out...');
+      await logout();
+      navigate('/login', { replace: true });
+      toast.success('Logout berhasil!');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Tetap redirect meskipun error
+      navigate('/login', { replace: true });
+      toast.error('Gagal logout, silakan coba lagi');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  // ==========================================================
+  // NAVIGASI
+  // ==========================================================
+  const navigateToHomeView = (view) => {
+    closeMobileMenu();
+    if (view) {
+      localStorage.setItem('jimpitan_last_view', view);
+    }
+    navigate('/', { state: { view } });
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -44,37 +136,6 @@ function AppContent() {
   const openTutorial = () => {
     closeMobileMenu();
     setShowTutorial(true);
-  };
-
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-    closeMobileMenu();
-    
-    try {
-      // Tampilkan toast loading
-      toast.info('Logging out...');
-      await logout();
-      toast.success('Logout berhasil!');
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Gagal logout, coba lagi');
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  // ==========================================================
-  // NAVIGASI KE HOME DENGAN VIEW TERTENTU
-  // ==========================================================
-  const navigateToHomeView = (view) => {
-    closeMobileMenu();
-    // Simpan view ke localStorage agar bertahan saat refresh
-    if (view) {
-      localStorage.setItem('jimpitan_last_view', view);
-    }
-    navigate('/', { state: { view } });
   };
 
   // ==========================================================
@@ -105,6 +166,9 @@ function AppContent() {
     return `${baseClass} text-slate-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 dark:hover:text-red-400`;
   };
 
+  // ==========================================================
+  // RENDER
+  // ==========================================================
   return (
     <div className={`h-screen flex flex-col bg-gradient-to-br from-white via-red-50/20 to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden ${currentUser ? 'pb-20' : ''}`}>
       {/* Navbar */}
@@ -455,6 +519,17 @@ function AppContent() {
         userRole={isAdmin ? 'admin' : 'petugas'}
       />
       <InstallPrompt />
+
+      {/* ========================================================== */}
+      {/* OVERLAY LOADING SAAT LOGOUT */}
+      {/* ========================================================== */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <LoadingSpinner fullscreen={false} loading text="Logging out..." />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
