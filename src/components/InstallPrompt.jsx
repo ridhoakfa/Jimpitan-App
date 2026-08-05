@@ -45,16 +45,12 @@ export default function InstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Jika dalam 2 detik tidak ada event, berarti tidak support PWA
-    const timeout = setTimeout(() => {
-      if (!installSupported) {
-        setShowManual(true);
-      }
-    }, 2000);
+    // ==========================================================
+    // PERBAIKAN: HAPUS FALLBACK OTOMATIS — TIDAK LANGSUNG SHOW MANUAL
+    // ==========================================================
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      clearTimeout(timeout);
     };
   }, []);
 
@@ -102,7 +98,7 @@ export default function InstallPrompt() {
       setShowBanner(false);
       setDismissed();
       setShowManual(true);
-      // TIDAK ADA TOAST ERROR DI SINI — hanya tampilkan manual
+      // TIDAK ADA TOAST ERROR DI SINI
     } finally {
       setInstalling(false);
     }
@@ -126,8 +122,10 @@ export default function InstallPrompt() {
     return null;
   }
 
-  // Jika tidak support dan belum muncul manual, tunggu
-  if (!installSupported && !showManual) {
+  // ==========================================================
+  // PERBAIKAN: TIDAK LANGSUNG TAMPILKAN MANUAL — HANYA BANNER ATAU TIDAK
+  // ==========================================================
+  if (!installSupported && !showBanner) {
     return null;
   }
 
@@ -135,6 +133,9 @@ export default function InstallPrompt() {
 
   return (
     <>
+      {/* ========================================================== */}
+      {/* BANNER INSTALL (muncul jika beforeinstallprompt tersedia) */}
+      {/* ========================================================== */}
       {showBanner && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-red-600/80 to-red-700/80 backdrop-blur-xl text-white p-3 sm:p-4 shadow-2xl z-50 animate-slide-in border-t border-white/20">
           <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -188,9 +189,12 @@ export default function InstallPrompt() {
         </div>
       )}
 
+      {/* ========================================================== */}
+      {/* MODAL INSTRUKSI MANUAL (hanya muncul saat diklik) */}
+      {/* ========================================================== */}
       {showManual && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] flex items-end sm:items-center justify-center p-3 sm:p-4">
-          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-md w-full p-4 sm:p-6 animate-scale-in max-h-[90vh] sm:max-h-none overflow-y-auto sm:overflow-visible border border-white/30 dark:border-gray-700/30">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-md w-full p-4 sm:p-6 animate-scale-in max-h-[90vh] overflow-y-auto border border-white/30 dark:border-gray-700/30">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="w-10 sm:w-12 h-10 sm:h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
