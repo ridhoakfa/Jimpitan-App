@@ -20,17 +20,22 @@ function HomeView({ onNavigate, isAdmin, currentUser }) {
     <>
       <div className="min-h-screen bg-gradient-to-b from-red-50 via-white to-red-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 px-3 py-4 pb-28 sm:pb-20 transition-colors duration-300">
         <div className="max-w-2xl mx-auto">
-          {/* Header Banner */}
+          {/* Header Banner - LOGO MITRAWISESA */}
           <div className="bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 rounded-3xl shadow-2xl p-6 mb-4 border-2 border-red-400 dark:border-red-700">
             <div className="flex items-center justify-between mb-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              {/* ========================================================== */}
+              {/* PERUBAHAN: Ganti ikon uang koin dengan logo MITRAWISESA     */}
+              {/* ========================================================== */}
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg p-1">
+                <img
+                  src="/mitrawisesa.png"
+                  alt="MITRAWISESA"
+                  className="w-full h-full object-contain rounded-xl"
+                />
               </div>
               <div className="text-right">
                 <h1 className="text-2xl font-black text-white">JIMPITAN</h1>
-                <p className="text-xs text-red-100 font-semibold">Manajemen Iuran</p>
+                <p className="text-xs text-red-100 font-semibold">Dukuh Mojorejo</p>
               </div>
             </div>
 

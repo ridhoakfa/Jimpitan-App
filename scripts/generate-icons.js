@@ -1,11 +1,11 @@
 /**
  * Icon Generator Script for PWA
- * Generates all required icon sizes from a master icon
+ * Generates all required icon sizes from logo MITRAWISESA
  * 
  * Usage:
- * 1. Place your master icon (512x512 or larger) as 'icon-master.png' in project root
- * 2. Install sharp: npm install sharp --save-dev
- * 3. Run: node scripts/generate-icons.js
+ * 1. Install sharp: npm install sharp --save-dev
+ * 2. Place mitrawisesa.png in public/ folder
+ * 3. Run: node scripts/generateicon.js
  */
 
 import sharp from 'sharp';
@@ -16,12 +16,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Prefer PNG master, fallback to SVG if PNG not present
-let MASTER_ICON = path.join(__dirname, '..', 'icon-master.png');
-const MASTER_SVG = path.join(__dirname, '..', 'icon-master.svg');
-if (!fs.existsSync(MASTER_ICON) && fs.existsSync(MASTER_SVG)) {
-  MASTER_ICON = MASTER_SVG;
-}
+// ==========================================================
+// PERUBAHAN: Gunakan mitrawisesa.png sebagai master icon
+// ==========================================================
+const MASTER_ICON = path.join(__dirname, '..', 'public', 'mitrawisesa.png');
 const OUTPUT_DIR = path.join(__dirname, '..', 'public');
 
 // Icon sizes required for PWA
@@ -40,13 +38,12 @@ const SIZES = [
 const FAVICON_SIZES = [16, 32, 48];
 
 async function generateIcons() {
-  console.log('🎨 Generating PWA icons...\n');
+  console.log('🎨 Generating PWA icons from MITRAWISESA logo...\n');
 
   // Check if master icon exists
   if (!fs.existsSync(MASTER_ICON)) {
-    console.error('❌ Master icon not found!');
-    console.error(`   Please place your icon as: ${MASTER_ICON}`);
-    console.error('   Recommended: 512x512 or 1024x1024 PNG with transparent background\n');
+    console.error('❌ MITRAWISESA logo not found!');
+    console.error(`   Please ensure public/mitrawisesa.png exists`);
     process.exit(1);
   }
 
@@ -72,7 +69,7 @@ async function generateIcons() {
       await sharp(MASTER_ICON)
         .resize(size, size, {
           fit: 'contain',
-          background: { r: 255, g: 255, b: 255, alpha: 0 }
+          background: { r: 255, g: 255, b: 255, alpha: 1 }
         })
         .png()
         .toFile(outputPath);
@@ -89,7 +86,7 @@ async function generateIcons() {
       await sharp(MASTER_ICON)
         .resize(size, size, {
           fit: 'contain',
-          background: { r: 255, g: 255, b: 255, alpha: 0 }
+          background: { r: 255, g: 255, b: 255, alpha: 1 }
         })
         .png()
         .toFile(outputPath);
@@ -109,11 +106,39 @@ async function generateIcons() {
     
     console.log('✅ Generated: apple-touch-icon.png');
 
+    // Generate favicon.ico (multi-size)
+    // Sharp doesn't directly support .ico, so we generate PNGs and then use a tool, but we can just use the 32x32 PNG as favicon.ico replacement
+    // We'll generate a single favicon.ico using another approach, but we can just use favicon-32x32.png as favicon.ico
+    
+    // For compatibility, copy favicon-32x32.png to favicon.ico (if you have a tool to convert, but we'll just use PNG)
+    // Most modern browsers support PNG favicon, so we can use favicon-32x32.png directly.
+    // But we still generate favicon.ico from the 32x32 PNG using sharp's toFormat('ico') if supported.
+    // Sharp doesn't support .ico natively, so we'll just keep using favicon-32x32.png as favicon.
+    // For .ico generation, we can use 'png-to-ico' or similar, but we'll just rely on the PNG fallback.
+    // We'll copy favicon-32x32.png to favicon.ico for compatibility.
+    const fav32Path = path.join(OUTPUT_DIR, 'favicon-32x32.png');
+    const icoPath = path.join(OUTPUT_DIR, 'favicon.ico');
+    if (fs.existsSync(fav32Path)) {
+      fs.copyFileSync(fav32Path, icoPath);
+      console.log('✅ Generated: favicon.ico (from favicon-32x32.png)');
+    }
+
+    // Generate favicon.svg (we can just copy mitrawisesa.png? but SVG is different, we'll keep existing)
+    // We'll create a simple SVG based on the master icon? Actually we can just use mitrawisesa.png as is.
+    // But favicon.svg might be used for browser tabs. We'll generate a simple SVG placeholder.
+    // Since we don't have an SVG version, we can just keep the existing favicon.svg or create a simple one.
+    // For simplicity, we'll keep favicon.svg as is, or we can generate a generic SVG.
+    // But to be safe, we'll keep the existing favicon.svg or create one from the PNG? That's complex.
+    // We'll just keep the existing favicon.svg (if any) or we can delete it.
+    // We'll generate a simple SVG favicon with the logo text.
+    // But for now, we'll just keep the PNGs.
+
     console.log('\n✨ All icons generated successfully!\n');
     console.log('📋 Next steps:');
     console.log('   1. Check generated icons in public/ folder');
-    console.log('   2. Update manifest.json if needed');
-    console.log('   3. Test PWA installation\n');
+    console.log('   2. Update manifest.json with new icon paths');
+    console.log('   3. Update index.html with correct favicon and apple-touch-icon');
+    console.log('   4. Test PWA installation\n');
 
   } catch (error) {
     console.error('❌ Error generating icons:', error.message);
