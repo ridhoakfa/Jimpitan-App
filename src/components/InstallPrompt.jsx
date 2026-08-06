@@ -59,7 +59,7 @@ export default function InstallPrompt() {
       setShowBanner(false);
       setInstalling(false);
       setDismissed();
-      toast.success('✅ Aplikasi berhasil diinstall!');
+      toast.success('Aplikasi berhasil diinstall!');
     };
     window.addEventListener('appinstalled', handleAppInstalled);
     return () => window.removeEventListener('appinstalled', handleAppInstalled);
@@ -85,7 +85,7 @@ export default function InstallPrompt() {
       if (result === true) {
         setShowBanner(false);
         setDismissed();
-        toast.success('✅ Aplikasi berhasil diinstall!');
+        toast.success('Aplikasi berhasil diinstall!');
       } else {
         setShowBanner(false);
         setDismissed();

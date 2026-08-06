@@ -29,7 +29,7 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('home');
 
   // ==========================================================
-  // AUTO LOGOUT IDLE 30 MENIT
+  // AUTO LOGOUT IDLE 30 MENIT (dengan perbaikan overlay)
   // ==========================================================
   const idleTimerRef = useRef(null);
   const IDLE_TIMEOUT = 30 * 60 * 1000;
@@ -42,11 +42,12 @@ function AppContent() {
       await logout();
       navigate('/login', { replace: true });
       toast.success('Logout otomatis berhasil');
+      // Tunda penghapusan overlay hingga navigasi selesai
+      setTimeout(() => setIsLoggingOut(false), 400);
     } catch (error) {
       console.error('Idle logout error:', error);
       navigate('/login', { replace: true });
-    } finally {
-      setIsLoggingOut(false);
+      setTimeout(() => setIsLoggingOut(false), 400);
     }
   };
 
@@ -92,22 +93,19 @@ function AppContent() {
   }, [location]);
 
   // ==========================================================
-  // LOGOUT MANUAL DENGAN TIMEOUT FALLBACK & OVERLAY
+  // LOGOUT MANUAL (dengan perbaikan overlay)
   // ==========================================================
   const performLogout = async () => {
-    // Coba logout, tapi dengan timeout 3 detik
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Logout timeout')), 3000);
     });
 
     try {
-      // Race antara logout dan timeout
       await Promise.race([logout(), timeoutPromise]);
       navigate('/login', { replace: true });
       toast.success('Logout berhasil!');
     } catch (error) {
       console.warn('Logout timeout or error, forcing redirect:', error);
-      // Tetap redirect ke login meskipun ada error
       navigate('/login', { replace: true });
       toast.info('Session berakhir, silakan login kembali');
     }
@@ -119,14 +117,13 @@ function AppContent() {
     closeMobileMenu();
 
     try {
-      // Tampilkan overlay (sudah di-render oleh state isLoggingOut)
       await performLogout();
+      // Tunda penghapusan overlay agar navigasi benar-benar terjadi
+      setTimeout(() => setIsLoggingOut(false), 400);
     } catch (error) {
       console.error('Logout error:', error);
-      // Tetap redirect
       navigate('/login', { replace: true });
-    } finally {
-      setIsLoggingOut(false);
+      setTimeout(() => setIsLoggingOut(false), 400);
     }
   };
 
@@ -187,7 +184,7 @@ function AppContent() {
   // ==========================================================
   return (
     <div className={`h-screen flex flex-col bg-gradient-to-br from-white via-red-50/20 to-white/80 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden ${currentUser ? 'pb-20' : ''}`}>
-      {/* Navbar */}
+      {/* Navbar - sama seperti sebelumnya, tidak diubah */}
       <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg shadow-slate-200/50 dark:shadow-none border-b border-slate-200/60 dark:border-gray-700/60 py-3 px-4 md:py-4 md:px-6 flex justify-between items-center flex-shrink-0 relative z-50">
         <button
           onClick={() => navigateToHomeView('home')}
@@ -536,9 +533,7 @@ function AppContent() {
       />
       <InstallPrompt />
 
-      {/* ========================================================== */}
-      {/* OVERLAY LOADING SAAT LOGOUT — MENGGUNAKAN LoadingSpinner */}
-      {/* ========================================================== */}
+      {/* Overlay loading saat logout */}
       {isLoggingOut && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
