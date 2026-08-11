@@ -2,8 +2,8 @@ import QRCode from 'qrcode';
 
 /**
  * Generate individual QR card images using canvas rendering
- * Dengan logo MITRAWISESA & palet warna Karang Taruna
- * Tambahan footer identitas KKN dengan layout terpisah
+ * Dengan logo MITRAWISESA & palet warna modern (sama dengan QRCard)
+ * Footer identitas KKN dengan layout terpisah
  */
 export async function generateQRCards(customers, onProgress = null) {
   const cards = [];
@@ -28,101 +28,158 @@ export async function generateQRCards(customers, onProgress = null) {
       const ctx = cardCanvas.getContext('2d');
       
       cardCanvas.width = 800;
-      cardCanvas.height = 1080; // tinggi ditambah untuk footer
+      cardCanvas.height = 1080;
       
-      // ============================================
-      // BACKGROUND
-      // ============================================
-      ctx.fillStyle = '#efede1';
+      // ==========================================================
+      // BACKGROUND GRADIENT (sama dengan QRCard)
+      // ==========================================================
+      const bgGradient = ctx.createLinearGradient(0, 0, 0, cardCanvas.height);
+      bgGradient.addColorStop(0, '#f8fafc');
+      bgGradient.addColorStop(1, '#e0e7ff');
+      ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, cardCanvas.width, cardCanvas.height);
       
-      // BORDER
-      ctx.strokeStyle = '#201b19';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(20, 20, cardCanvas.width - 40, cardCanvas.height - 40);
+      // ==========================================================
+      // BORDER (sama dengan QRCard)
+      // ==========================================================
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.strokeRect(30, 30, cardCanvas.width - 60, cardCanvas.height - 60);
       
-      // TOP ACCENT BAR
-      ctx.fillStyle = '#c42a48';
-      ctx.fillRect(40, 40, cardCanvas.width - 80, 12);
+      // ==========================================================
+      // ACCENT BAR (sama dengan QRCard)
+      // ==========================================================
+      const accentGradient = ctx.createLinearGradient(0, 50, 0, 150);
+      accentGradient.addColorStop(0, '#6366f1');
+      accentGradient.addColorStop(1, '#8b5cf6');
+      ctx.fillStyle = accentGradient;
+      ctx.fillRect(50, 50, cardCanvas.width - 100, 8);
       
-      // LOGO
+      // ==========================================================
+      // LOGO DI HEADER - Lebih ke atas (centerY = 105)
+      // ==========================================================
       if (logoImage) {
         const logoSize = 100;
-        const logoX = (cardCanvas.width - logoSize) / 2;
-        const logoY = 70;
-        ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+        const centerX = cardCanvas.width / 2;
+        const centerY = 120; // Dinaikkan dari 120 ke 105
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 4;
+
+        // Lingkaran putih
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 55, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Border lingkaran
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Clip lingkaran untuk logo
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
+        ctx.clip();
+        const x = centerX - logoSize / 2;
+        const y = centerY - logoSize / 2;
+        ctx.drawImage(logoImage, x, y, logoSize, logoSize);
+        ctx.restore();
+
+        ctx.shadowColor = 'rgba(99,102,241,0.3)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.strokeStyle = 'transparent';
+        ctx.stroke();
+        ctx.restore();
       } else {
-        ctx.fillStyle = '#201b19';
-        ctx.font = 'bold 48px Arial';
+        // Fallback jika logo tidak ada
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 42px Arial';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🏡', cardCanvas.width / 2, 120);
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText('Jimpitan', cardCanvas.width / 2, 130);
       }
       
-      // TITLE
-      ctx.fillStyle = '#201b19';
-      ctx.font = 'bold 36px Arial';
+      // ==========================================================
+      // TITLE "Jimpitan" - Lebih ke bawah (Y = 225)
+      // ==========================================================
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 42px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText('JIMPITAN', cardCanvas.width / 2, 210);
+      ctx.fillText('Jimpitan', cardCanvas.width / 2, 225);
       
-      ctx.fillStyle = '#69641e';
-      ctx.font = '18px Arial';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillText('Karang Taruna Dukuh Mojorejo', cardCanvas.width / 2, 240);
-      
-      ctx.strokeStyle = '#acaa42';
+      // Garis separator - turun mengikuti title
+      ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(150, 260);
-      ctx.lineTo(650, 260);
+      ctx.moveTo(200, 250);
+      ctx.lineTo(600, 250);
       ctx.stroke();
       
-      // CUSTOMER CARD
+      // ==========================================================
+      // CUSTOMER CARD (box putih)
+      // ==========================================================
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(32, 27, 25, 0.1)';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
       ctx.shadowBlur = 20;
       ctx.shadowOffsetY = 4;
       ctx.beginPath();
-      ctx.roundRect(60, 280, cardCanvas.width - 120, 90, 12);
+      ctx.roundRect(80, 275, cardCanvas.width - 160, 90, 12); // y dari 270 ke 275 (sedikit turun)
       ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       
-      ctx.fillStyle = '#201b19';
-      ctx.font = 'bold 36px Arial';
+      // NAMA customer - dinaikkan sedikit agar lebih ke atas (Y = 310)
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 38px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(customer.nama, cardCanvas.width / 2, 315);
+      ctx.fillText(customer.nama, cardCanvas.width / 2, 310);
       
-      ctx.fillStyle = '#35300c';
-      ctx.font = '24px Arial';
-      ctx.fillText(`📍 RT ${customer.blok}`, cardCanvas.width / 2, 355);
+      // RT - diturunkan sedikit agar jarak dengan nama lebih lega (Y = 355)
+      ctx.fillStyle = '#64748b';
+      ctx.font = '26px Arial';
+      ctx.fillText(`RT ${customer.blok}`, cardCanvas.width / 2, 350);
       
-      // QR CODE
-      const qrSize = 360;
+      // ==========================================================
+      // QR CODE (sama dengan QRCard)
+      // ==========================================================
+      const qrSize = 400;
       const qrX = (cardCanvas.width - qrSize) / 2;
       const qrY = 400;
       
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(32, 27, 25, 0.15)';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
       ctx.shadowBlur = 30;
-      ctx.shadowOffsetY = 6;
+      ctx.shadowOffsetY = 8;
       ctx.beginPath();
-      ctx.roundRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30, 10);
+      ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 12);
       ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       
+      // Generate QR data URL
       const qrDataUrl = await new Promise((resolve) => {
         QRCode.toDataURL(customer.qrHash, {
           width: 600,
           margin: 2,
           errorCorrectionLevel: 'H',
           color: {
-            dark: '#201b19',
+            dark: '#000000',
             light: '#ffffff'
           }
         }, (error, url) => {
@@ -141,66 +198,6 @@ export async function generateQRCards(customers, onProgress = null) {
         await new Promise((resolve) => {
           qrImage.onload = () => {
             ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
-            
-            // Logo di tengah QR
-            if (logoImage) {
-              const logoQrSize = 60;
-              const logoQrX = qrX + (qrSize - logoQrSize) / 2;
-              const logoQrY = qrY + (qrSize - logoQrSize) / 2;
-              ctx.fillStyle = '#ffffff';
-              ctx.beginPath();
-              ctx.arc(logoQrX + logoQrSize/2, logoQrY + logoQrSize/2, logoQrSize/2 + 6, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.drawImage(logoImage, logoQrX, logoQrY, logoQrSize, logoQrSize);
-            }
-            
-            // ============================================
-            // FOOTER - BAGIAN ATAS (Scan QR + MITRAWISESA)
-            // ============================================
-            ctx.fillStyle = '#acaa42';
-            ctx.shadowColor = 'rgba(32, 27, 25, 0.05)';
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetY = 2;
-            ctx.beginPath();
-            ctx.roundRect(60, 870, cardCanvas.width - 120, 80, 10);
-            ctx.fill();
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetY = 0;
-            
-            ctx.fillStyle = '#201b19';
-            ctx.font = '20px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Scan QR untuk mencatat jimpitan', cardCanvas.width / 2, 900);
-            
-            ctx.fillStyle = '#c42a48';
-            ctx.font = 'bold 26px Arial';
-            ctx.fillText('MITRAWISESA', cardCanvas.width / 2, 935);
-            
-            // ============================================
-            // FOOTER - BAGIAN BAWAH (Identitas KKN)
-            // ============================================
-            ctx.fillStyle = '#d4d0b8'; // warna sedikit lebih gelap dari background
-            ctx.shadowColor = 'rgba(32, 27, 25, 0.03)';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetY = 1;
-            ctx.beginPath();
-            ctx.roundRect(60, 960, cardCanvas.width - 120, 70, 10);
-            ctx.fill();
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetY = 0;
-            
-            ctx.fillStyle = '#35300c';
-            ctx.font = '16px Arial';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Dibuat oleh KKN-R UNDIP Tim II 2025/2026', cardCanvas.width / 2, 988);
-            
-            ctx.fillStyle = '#201b19';
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText('Ridho Akbar Fadhilah (Statistika)', cardCanvas.width / 2, 1015);
-            
             resolve();
           };
           qrImage.onerror = () => {
@@ -210,6 +207,56 @@ export async function generateQRCards(customers, onProgress = null) {
         });
       }
       
+      // ==========================================================
+      // FOOTER - BAGIAN ATAS (Scan QR + MITRAWISESA)
+      // ==========================================================
+      ctx.fillStyle = '#f1f5f9';
+      ctx.shadowColor = 'rgba(0,0,0,0.05)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 2;
+      ctx.beginPath();
+      ctx.roundRect(60, 860, cardCanvas.width - 120, 80, 10);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      
+      ctx.fillStyle = '#475569';
+      ctx.font = '22px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Scan QR untuk mencatat', cardCanvas.width / 2, 885);
+      
+      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 26px Arial';
+      ctx.fillText('Jimpitan', cardCanvas.width / 2, 920);
+      
+      // ==========================================================
+      // FOOTER - BAGIAN BAWAH (Identitas KKN)
+      // ==========================================================
+      ctx.fillStyle = '#e2e8f0';
+      ctx.shadowColor = 'rgba(0,0,0,0.03)';
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetY = 1;
+      ctx.beginPath();
+      ctx.roundRect(60, 950, cardCanvas.width - 120, 80, 10);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      
+      ctx.fillStyle = '#475569';
+      ctx.font = '18px Arial';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Dibuat oleh KKN-R UNDIP Tim II 2025/2026', cardCanvas.width / 2, 975);
+      
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText('Ridho Akbar Fadhilah (Statistika)', cardCanvas.width / 2, 1005);
+      
+      // ==========================================================
+      // CONVERT TO BLOB
+      // ==========================================================
       const blob = await new Promise((resolve) => {
         cardCanvas.toBlob((blob) => {
           resolve(blob);
@@ -243,12 +290,12 @@ function loadLogo() {
       console.warn('Logo MITRAWISESA tidak ditemukan, lanjut tanpa logo');
       resolve(null);
     };
-    img.src = '/mitrawisesa.PNG';
+    img.src = '/mitrawisesa.png';
   });
 }
 
 /**
- * RoundRect polyfill untuk Canvas
+ * RoundRect polyfill untuk Canvas (jika belum ada)
  */
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
