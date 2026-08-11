@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
 
 /**
  * Generate individual QR card images using canvas rendering
@@ -39,30 +40,24 @@ export async function generateQRCards(customers, onProgress = null) {
       ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, cardCanvas.width, cardCanvas.height);
       
-      // ==========================================================
-      // BORDER (sama dengan QRCard)
-      // ==========================================================
+      // BORDER
       ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 2;
       ctx.lineJoin = 'round';
       ctx.strokeRect(30, 30, cardCanvas.width - 60, cardCanvas.height - 60);
       
-      // ==========================================================
-      // ACCENT BAR (sama dengan QRCard)
-      // ==========================================================
+      // ACCENT BAR
       const accentGradient = ctx.createLinearGradient(0, 50, 0, 150);
       accentGradient.addColorStop(0, '#6366f1');
       accentGradient.addColorStop(1, '#8b5cf6');
       ctx.fillStyle = accentGradient;
       ctx.fillRect(50, 50, cardCanvas.width - 100, 8);
       
-      // ==========================================================
-      // LOGO DI HEADER - Lebih ke atas (centerY = 105)
-      // ==========================================================
+      // LOGO DI HEADER
       if (logoImage) {
         const logoSize = 100;
         const centerX = cardCanvas.width / 2;
-        const centerY = 120; // Dinaikkan dari 120 ke 105
+        const centerY = 120;
 
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.15)';
@@ -70,7 +65,6 @@ export async function generateQRCards(customers, onProgress = null) {
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 4;
 
-        // Lingkaran putih
         ctx.beginPath();
         ctx.arc(centerX, centerY, 55, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
@@ -80,12 +74,10 @@ export async function generateQRCards(customers, onProgress = null) {
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
 
-        // Border lingkaran
         ctx.strokeStyle = '#6366f1';
         ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Clip lingkaran untuk logo
         ctx.save();
         ctx.beginPath();
         ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
@@ -102,25 +94,16 @@ export async function generateQRCards(customers, onProgress = null) {
         ctx.strokeStyle = 'transparent';
         ctx.stroke();
         ctx.restore();
-      } else {
-        // Fallback jika logo tidak ada
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 42px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText('Jimpitan', cardCanvas.width / 2, 130);
       }
       
-      // ==========================================================
-      // TITLE "Jimpitan" - Lebih ke bawah (Y = 225)
-      // ==========================================================
+      // TITLE "Jimpitan"
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 42px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
       ctx.fillText('Jimpitan', cardCanvas.width / 2, 225);
       
-      // Garis separator - turun mengikuti title
+      // Garis separator
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -128,35 +111,29 @@ export async function generateQRCards(customers, onProgress = null) {
       ctx.lineTo(600, 250);
       ctx.stroke();
       
-      // ==========================================================
-      // CUSTOMER CARD (box putih)
-      // ==========================================================
+      // CUSTOMER CARD
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
       ctx.shadowBlur = 20;
       ctx.shadowOffsetY = 4;
       ctx.beginPath();
-      ctx.roundRect(80, 275, cardCanvas.width - 160, 90, 12); // y dari 270 ke 275 (sedikit turun)
+      ctx.roundRect(80, 275, cardCanvas.width - 160, 90, 12);
       ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       
-      // NAMA customer - dinaikkan sedikit agar lebih ke atas (Y = 310)
       ctx.fillStyle = '#0f172a';
       ctx.font = 'bold 38px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(customer.nama, cardCanvas.width / 2, 310);
       
-      // RT - diturunkan sedikit agar jarak dengan nama lebih lega (Y = 355)
       ctx.fillStyle = '#64748b';
       ctx.font = '26px Arial';
       ctx.fillText(`RT ${customer.blok}`, cardCanvas.width / 2, 350);
       
-      // ==========================================================
-      // QR CODE (sama dengan QRCard)
-      // ==========================================================
+      // QR CODE
       const qrSize = 400;
       const qrX = (cardCanvas.width - qrSize) / 2;
       const qrY = 400;
@@ -172,7 +149,6 @@ export async function generateQRCards(customers, onProgress = null) {
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       
-      // Generate QR data URL
       const qrDataUrl = await new Promise((resolve) => {
         QRCode.toDataURL(customer.qrHash, {
           width: 600,
@@ -183,12 +159,8 @@ export async function generateQRCards(customers, onProgress = null) {
             light: '#ffffff'
           }
         }, (error, url) => {
-          if (!error) {
-            resolve(url);
-          } else {
-            console.error('QR generation error:', error);
-            resolve(null);
-          }
+          if (!error) resolve(url);
+          else resolve(null);
         });
       });
       
@@ -200,16 +172,11 @@ export async function generateQRCards(customers, onProgress = null) {
             ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
             resolve();
           };
-          qrImage.onerror = () => {
-            console.error('QR image load failed');
-            resolve();
-          };
+          qrImage.onerror = () => resolve();
         });
       }
       
-      // ==========================================================
-      // FOOTER - BAGIAN ATAS (Scan QR + MITRAWISESA)
-      // ==========================================================
+      // FOOTER ATAS
       ctx.fillStyle = '#f1f5f9';
       ctx.shadowColor = 'rgba(0,0,0,0.05)';
       ctx.shadowBlur = 10;
@@ -231,9 +198,7 @@ export async function generateQRCards(customers, onProgress = null) {
       ctx.font = 'bold 26px Arial';
       ctx.fillText('Jimpitan', cardCanvas.width / 2, 920);
       
-      // ==========================================================
-      // FOOTER - BAGIAN BAWAH (Identitas KKN)
-      // ==========================================================
+      // FOOTER BAWAH
       ctx.fillStyle = '#e2e8f0';
       ctx.shadowColor = 'rgba(0,0,0,0.03)';
       ctx.shadowBlur = 5;
@@ -254,9 +219,7 @@ export async function generateQRCards(customers, onProgress = null) {
       ctx.font = 'bold 18px Arial';
       ctx.fillText('Ridho Akbar Fadhilah (Statistika)', cardCanvas.width / 2, 1005);
       
-      // ==========================================================
       // CONVERT TO BLOB
-      // ==========================================================
       const blob = await new Promise((resolve) => {
         cardCanvas.toBlob((blob) => {
           resolve(blob);
@@ -267,7 +230,9 @@ export async function generateQRCards(customers, onProgress = null) {
         const filename = `Jimpitan_QR_RT${customer.blok}_${customer.nama}.png`;
         cards.push({
           filename: sanitizeFilename(filename),
-          blob
+          blob,
+          nama: customer.nama,
+          blok: customer.blok
         });
       }
     } catch (error) {
@@ -295,7 +260,7 @@ function loadLogo() {
 }
 
 /**
- * RoundRect polyfill untuk Canvas (jika belum ada)
+ * RoundRect polyfill
  */
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -332,9 +297,97 @@ export async function createZipFromCards(cards, zipName = 'qr-codes') {
 }
 
 /**
+ * ==========================================================
+ * FUNGSI BARU: Create PDF with 4 QR cards per page
+ * ==========================================================
+ */
+export async function createPDFFromCards(cards, title = 'QR Jimpitan') {
+  const { jsPDF } = await import('jspdf');
+  
+  // Ukuran A4 dalam mm (210 x 297)
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const margin = 15;
+  const gapX = 10;
+  const gapY = 10;
+  
+  // Hitung ukuran setiap card (2 kolom, 2 baris)
+  const cardWidth = (pageWidth - (margin * 2) - gapX) / 2;
+  const cardHeight = (pageHeight - (margin * 2) - gapY) / 2;
+  
+  // Posisi setiap card
+  const positions = [
+    { x: margin, y: margin },                     // kiri atas
+    { x: margin + cardWidth + gapX, y: margin },  // kanan atas
+    { x: margin, y: margin + cardHeight + gapY }, // kiri bawah
+    { x: margin + cardWidth + gapX, y: margin + cardHeight + gapY } // kanan bawah
+  ];
+
+  const doc = new jsPDF('p', 'mm', 'a4');
+  
+  // Loop per 4 cards
+  for (let i = 0; i < cards.length; i += 4) {
+    const pageCards = cards.slice(i, i + 4);
+    
+    // Jika bukan halaman pertama, tambah halaman baru
+    if (i > 0) {
+      doc.addPage();
+    }
+    
+    // Tambahkan header di setiap halaman (opsional)
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`QR Jimpitan - Halaman ${Math.floor(i/4) + 1}`, pageWidth / 2, 10, { align: 'center' });
+    
+    // Tempatkan 4 card
+    for (let j = 0; j < pageCards.length; j++) {
+      const card = pageCards[j];
+      const pos = positions[j];
+      
+      // Konversi blob ke data URL
+      const imageUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(card.blob);
+      });
+      
+      // Hitung proporsi gambar (800x1080) -> rasio 0.74
+      const imgWidth = cardWidth;
+      const imgHeight = cardWidth * (1080 / 800); // proporsional
+      
+      // Tambahkan ke PDF
+      doc.addImage(
+        imageUrl,
+        'PNG',
+        pos.x,
+        pos.y,
+        imgWidth,
+        imgHeight
+      );
+    }
+  }
+  
+  return doc.output('blob');
+}
+
+/**
  * Download ZIP file
  */
 export function downloadZIP(blob, filename = 'qr-codes.zip') {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+
+/**
+ * Download PDF file
+ */
+export function downloadPDF(blob, filename = 'qr-codes.pdf') {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

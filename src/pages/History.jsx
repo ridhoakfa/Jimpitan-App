@@ -554,7 +554,7 @@ export default function History({ onBack }) {
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
         variant="danger"
-        title="⚠️ Hapus Transaksi"
+        title="Hapus Transaksi"
         subtitle="Tindakan ini tidak dapat dibatalkan"
         message={`Apakah Anda yakin ingin menghapus transaksi untuk "${selectedTransaction?.nama || ''}" (Rp ${selectedTransaction?.nominal?.toLocaleString() || 0})?`}
         additionalInfo={selectedTransaction?.petugas ? `Petugas: ${selectedTransaction.petugas}` : ''}

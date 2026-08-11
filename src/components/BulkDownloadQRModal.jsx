@@ -1,16 +1,24 @@
 import { useState, useMemo } from 'react';
 import LoadingSpinner from './LoadingSpinner';
-import { generateQRCards, createZipFromCards, downloadZIP, getUniqueBloks } from '../utils/qrGenerator';
+import { 
+  generateQRCards, 
+  createZipFromCards, 
+  createPDFFromCards,
+  downloadZIP, 
+  downloadPDF,
+  getUniqueBloks 
+} from '../utils/qrGenerator';
 
 export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
   const [downloadMode, setDownloadMode] = useState('all'); // 'all' or 'byBlok'
   const [selectedBlok, setSelectedBlok] = useState('');
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [outputFormat, setOutputFormat] = useState('zip'); // 'zip' or 'pdf'
 
   const uniqueBloks = useMemo(() => getUniqueBloks(customers), [customers]);
 
-  const customersToDowload = useMemo(() => {
+  const customersToDownload = useMemo(() => {
     if (downloadMode === 'all') {
       return customers;
     } else if (downloadMode === 'byBlok' && selectedBlok) {
@@ -20,17 +28,17 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
   }, [customers, downloadMode, selectedBlok]);
 
   async function handleDownload() {
-    if (customersToDowload.length === 0) {
+    if (customersToDownload.length === 0) {
       alert('Tidak ada customer untuk didownload');
       return;
     }
 
     try {
       setGenerating(true);
-      setProgress({ current: 0, total: customersToDowload.length });
+      setProgress({ current: 0, total: customersToDownload.length });
       
-      // Generate QR card images with progress callback
-      const cards = await generateQRCards(customersToDowload, (current, total) => {
+      // Generate QR cards
+      const cards = await generateQRCards(customersToDownload, (current, total) => {
         setProgress({ current, total });
       });
       
@@ -39,19 +47,31 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
         return;
       }
 
-      // Create ZIP file
-      const zipBlob = await createZipFromCards(
-        cards,
-        downloadMode === 'all' 
-          ? 'qr-semua-customers' 
-          : `qr-blok-${selectedBlok}`
-      );
+      if (outputFormat === 'zip') {
+        // ZIP mode
+        const zipBlob = await createZipFromCards(
+          cards,
+          downloadMode === 'all' 
+            ? 'qr-semua-customers' 
+            : `qr-blok-${selectedBlok}`
+        );
 
-      const filename = downloadMode === 'all'
-        ? `qr-semua-${new Date().toISOString().split('T')[0]}.zip`
-        : `qr-blok-${selectedBlok}-${new Date().toISOString().split('T')[0]}.zip`;
+        const filename = downloadMode === 'all'
+          ? `qr-semua-${new Date().toISOString().split('T')[0]}.zip`
+          : `qr-blok-${selectedBlok}-${new Date().toISOString().split('T')[0]}.zip`;
 
-      downloadZIP(zipBlob, filename);
+        downloadZIP(zipBlob, filename);
+      } else {
+        // PDF mode (4 per halaman)
+        const pdfBlob = await createPDFFromCards(cards, 'QR Jimpitan');
+        
+        const filename = downloadMode === 'all'
+          ? `qr-semua-${new Date().toISOString().split('T')[0]}.pdf`
+          : `qr-blok-${selectedBlok}-${new Date().toISOString().split('T')[0]}.pdf`;
+
+        downloadPDF(pdfBlob, filename);
+      }
+      
       onClose();
     } catch (error) {
       alert(`Error: ${error.message}`);
@@ -82,7 +102,7 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
           </button>
         </div>
 
-        {generating && <LoadingSpinner text={`Generate QR cards & create ZIP... (${progress.current}/${progress.total})`} />}
+        {generating && <LoadingSpinner text={`Generate QR cards... (${progress.current}/${progress.total})`} />}
 
         {!generating && (
           <div className="space-y-4">
@@ -111,7 +131,7 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
                     📋 Semua Customer
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Download {customers.length} QR cards dalam 1 ZIP
+                    {customers.length} QR cards
                   </div>
                 </div>
               </label>
@@ -129,7 +149,7 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
                   checked={downloadMode === 'byBlok'}
                   onChange={(e) => {
                     setDownloadMode(e.target.value);
-                    setSelectedBlok(''); // Reset selected blok when switching mode
+                    setSelectedBlok('');
                   }}
                   className="w-4 h-4"
                 />
@@ -138,7 +158,7 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
                     🏢 Berdasarkan RT
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Pilih RT tertentu untuk download
+                    Pilih RT tertentu
                   </div>
                 </div>
               </label>
@@ -168,13 +188,49 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
               </div>
             )}
 
+            {/* ========================================================== */}
+            {/* FORMAT OUTPUT: ZIP vs PDF */}
+            {/* ========================================================== */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Format Output
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setOutputFormat('zip')}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    outputFormat === 'zip'
+                      ? 'bg-blue-500 text-white shadow-lg'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  📦 ZIP (Individual)
+                </button>
+                <button
+                  onClick={() => setOutputFormat('pdf')}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    outputFormat === 'pdf'
+                      ? 'bg-green-500 text-white shadow-lg'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  📄 PDF (4 per halaman)
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {outputFormat === 'zip' 
+                  ? 'Download file PNG individual dalam ZIP' 
+                  : 'Download PDF A4 dengan 4 QR per halaman'}
+              </p>
+            </div>
+
             {/* Info */}
             <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg text-sm text-red-700 dark:text-red-300">
               <h3 className="font-semibold mb-1">ℹ️ Informasi:</h3>
               <ul className="text-xs space-y-1">
-                <li>• Download berupa ZIP file berisi individual PNG images</li>
-                <li>• Setiap image adalah card QR yang siap cetak atau share</li>
-                <li>• Naming format: Jimpitan_QR_[RT]_[Nama].png</li>
+                <li>• <strong>ZIP:</strong> File PNG individual, fleksibel untuk berbagai keperluan</li>
+                <li>• <strong>PDF (4 per halaman):</strong> Layout A4 dengan 2 kolom x 2 baris siap cetak</li>
+                <li>• Nama file: Jimpitan_QR_RT[Nama].png</li>
               </ul>
             </div>
 
@@ -184,10 +240,11 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
                 📊 Summary:
               </div>
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {customersToDowload.length}
+                {customersToDownload.length}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                QR cards akan didownload
+                QR cards akan didownload dalam format {outputFormat.toUpperCase()}
+                {outputFormat === 'pdf' && ` (${Math.ceil(customersToDownload.length / 4)} halaman)`}
               </div>
             </div>
 
@@ -207,7 +264,7 @@ export default function BulkDownloadQRModal({ isOpen, onClose, customers }) {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Download ZIP
+                Download {outputFormat === 'zip' ? 'ZIP' : 'PDF'}
               </button>
             </div>
           </div>
