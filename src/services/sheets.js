@@ -9,9 +9,9 @@ if (!SCRIPT_URL) {
 }
 
 // ==========================================================
-// PERBAIKAN: TIMEOUT DIPERBESAR MENJADI 30 DETIK
+// TIMEOUT: 45 detik (toleransi cold start Apps Script)
 // ==========================================================
-const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 30000;
+const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 45000;
 
 // Global token invalid handler
 let tokenInvalidHandler = null;
@@ -63,9 +63,6 @@ function createJSONPRequest(action, params = {}, useCache = true) {
               .toString(36)
               .substr(2, 9)}`;
 
-            // ==========================================================
-            // PERBAIKAN: SET TIMEOUT LEBIH PANJANG
-            // ==========================================================
             const timeoutId = setTimeout(() => {
               if (window[callbackName]) {
                 delete window[callbackName];
@@ -150,8 +147,8 @@ function createJSONPRequest(action, params = {}, useCache = true) {
             document.body.appendChild(script);
           });
         },
-        3, // Retry 3 kali
-        1000 // Delay 1 detik
+        2, // Retry 2 kali (dari 3)
+        800 // Delay 800ms (dari 1000)
       )
     )
   );
