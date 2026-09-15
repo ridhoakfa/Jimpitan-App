@@ -1,4 +1,4 @@
-import { requestQueue, requestCache, retryWithBackoff } from "./requestManager";
+import { requestQueue, requestCache, retryWithBackoff, deduplicatedRequest } from "./requestManager";
 import { measureAsync, apiMetrics } from "../utils/performance";
 import { safeLog, maskObject, maskToken } from "../utils/security";
 
@@ -8,10 +8,8 @@ if (!SCRIPT_URL) {
   console.warn('VITE_SCRIPT_URL tidak di-set. Pastikan file .env memiliki VITE_SCRIPT_URL');
 }
 
-// ==========================================================
-// TIMEOUT: 45 detik (toleransi cold start Apps Script)
-// ==========================================================
-const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 45000;
+// Timeout 30 detik
+const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 30000;
 
 // Global token invalid handler
 let tokenInvalidHandler = null;
@@ -52,8 +50,10 @@ function createJSONPRequest(action, params = {}, useCache = true) {
     }
   }
 
-  // Queue the request with performance tracking
-  return requestQueue.add(() =>
+  // Deduplicate: kalau request sama sedang jalan, tunggu yang itu
+  const dedupeKey = `${action}_${JSON.stringify(params)}`;
+  
+  return deduplicatedRequest(dedupeKey, () => requestQueue.add(() =>
     measureAsync(`API-${action}`, () =>
       retryWithBackoff(
         () => {
@@ -76,7 +76,6 @@ function createJSONPRequest(action, params = {}, useCache = true) {
             }, JSONP_TIMEOUT_MS);
 
             window[callbackName] = (data) => {
-              // Clear timeout
               clearTimeout(timeoutId);
               delete window[callbackName];
               if (script.parentNode) {
@@ -89,7 +88,6 @@ function createJSONPRequest(action, params = {}, useCache = true) {
                 apiMetrics.track(action, duration, false);
                 const errorMsg = data.message || "Request failed";
                 
-                // Check if token is invalid or expired
                 if (
                   errorMsg.toLowerCase().includes('token') && 
                   (errorMsg.toLowerCase().includes('invalid') || 
@@ -103,7 +101,6 @@ function createJSONPRequest(action, params = {}, useCache = true) {
                 reject(new Error(errorMsg));
               } else if (data) {
                 apiMetrics.track(action, duration, true);
-                // Cache successful GET operations
                 if (
                   useCache &&
                   [
@@ -147,11 +144,11 @@ function createJSONPRequest(action, params = {}, useCache = true) {
             document.body.appendChild(script);
           });
         },
-        2, // Retry 2 kali (dari 3)
-        800 // Delay 800ms (dari 1000)
+        1, // Retry 1x saja
+        600 // Delay 600ms
       )
     )
-  );
+  ));
 }
 
 // ==========================================================
@@ -207,7 +204,6 @@ export async function getUserActivity(token, role = "") {
 }
 
 export async function createUserInSheet(token, userData) {
-  // Invalidate cache after mutation
   requestCache.delete(`getUsers_${JSON.stringify({ token })}`);
 
   return requestQueue.add(() =>
@@ -337,7 +333,11 @@ export async function bulkDeleteUsersInSheet(token, userIds) {
 // ==========================================================
 
 export async function submitToSheet(payload) {
-  requestCache.clear();
+  // Hanya hapus cache yang terkait, jangan clear semua
+  requestCache.delete("getHistory_{}");
+  if (payload.customer_id) {
+    requestCache.delete("getCustomers_{}");
+  }
 
   try {
     const response = await createJSONPRequest(

@@ -2,11 +2,15 @@
 const _env =
   typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
 
-const DEFAULT_MAX_CONCURRENT = Number(_env.VITE_REQUEST_MAX_CONCURRENT) || 3;
-const DEFAULT_CACHE_TTL = Number(_env.VITE_REQUEST_CACHE_TTL_MS) || 30000; // ms
-const DEFAULT_RETRY_MAX = Number(_env.VITE_REQUEST_RETRY_MAX) || 3;
+// ==========================================================
+// OPTIMASI: Naikkan concurrency, perpanjang cache TTL,
+// turunkan retry untuk hindari beban berlebih
+// ==========================================================
+const DEFAULT_MAX_CONCURRENT = Number(_env.VITE_REQUEST_MAX_CONCURRENT) || 5;
+const DEFAULT_CACHE_TTL = Number(_env.VITE_REQUEST_CACHE_TTL_MS) || 300000; // 5 menit
+const DEFAULT_RETRY_MAX = Number(_env.VITE_REQUEST_RETRY_MAX) || 1; // 1x retry saja
 const DEFAULT_RETRY_BASE_DELAY =
-  Number(_env.VITE_REQUEST_RETRY_BASE_DELAY_MS) || 1000; // ms
+  Number(_env.VITE_REQUEST_RETRY_BASE_DELAY_MS) || 800; // 800ms
 
 class RequestQueue {
   constructor(maxConcurrent = DEFAULT_MAX_CONCURRENT) {
@@ -41,16 +45,20 @@ class RequestQueue {
     }
   }
 
+  // ==========================================================
+  // FIX: Jangan reset activeRequests (bisa nyangkut jadi negatif)
+  // ==========================================================
   clear() {
     this.queue = [];
-    this.activeRequests = 0;
+    // ❌ JANGAN reset activeRequests! Biarkan request yang sedang
+    // jalan selesai dengan sendirinya.
+    // this.activeRequests = 0;
   }
 }
 
 // Request cache with TTL
 class RequestCache {
-  constructor(ttl = 30000) {
-    // 30 seconds default
+  constructor(ttl = DEFAULT_CACHE_TTL) {
     this.cache = new Map();
     this.ttl = ttl;
   }
@@ -87,6 +95,23 @@ class RequestCache {
 export const requestQueue = new RequestQueue();
 export const requestCache = new RequestCache(DEFAULT_CACHE_TTL);
 
+// ==========================================================
+// IN-FLIGHT DEDUPLICATION
+// Mencegah request ganda untuk action yang sama
+// ==========================================================
+const inFlightRequests = new Map();
+
+export function deduplicatedRequest(key, requestFn) {
+  if (inFlightRequests.has(key)) {
+    return inFlightRequests.get(key);
+  }
+  const promise = requestFn().finally(() => {
+    inFlightRequests.delete(key);
+  });
+  inFlightRequests.set(key, promise);
+  return promise;
+}
+
 // Retry logic with exponential backoff
 export async function retryWithBackoff(
   fn,
@@ -100,7 +125,7 @@ export async function retryWithBackoff(
       if (i === maxRetries - 1) throw error;
 
       // Exponential backoff: delay = baseDelay * 2^i + random jitter
-      const delay = baseDelay * Math.pow(2, i) + Math.random() * 1000;
+      const delay = baseDelay * Math.pow(2, i) + Math.random() * 500;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
@@ -109,7 +134,7 @@ export async function retryWithBackoff(
 // Clear all caches (useful for logout or force refresh)
 export function clearAllCaches() {
   requestCache.clear();
-  requestQueue.clear();
+  // Jangan panggil requestQueue.clear() karena bisa nyangkut
 }
 
 // Prefetch data to cache
