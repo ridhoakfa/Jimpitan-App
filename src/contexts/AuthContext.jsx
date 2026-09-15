@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import {
   loginWithSheet,
   verifyToken,
@@ -33,6 +33,9 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState('');
   const [initialized, setInitialized] = useState(false);
   const navigate = useNavigate();
+  
+  // Ref untuk cache verify token (hindari call berulang dalam waktu dekat)
+  const lastVerifyRef = useRef({ token: null, time: 0 });
 
   // Persist to localStorage
   const persistCurrentUser = useCallback(() => {
@@ -53,17 +56,33 @@ export function AuthProvider({ children }) {
     setToken(null);
     localStorage.removeItem(CURRENT_USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
+    // Reset cache verify
+    lastVerifyRef.current = { token: null, time: 0 };
   }, []);
 
-  // Verify and restore session
+  // Verify and restore session - dengan cache 30 detik
   const verifyAndRestoreSession = useCallback(async () => {
     if (!token) return false;
+    
+    // ==========================================================
+    // CACHE: Skip verify kalau baru saja diverifikasi < 30 detik
+    // ==========================================================
+    const now = Date.now();
+    if (
+      lastVerifyRef.current.token === token &&
+      (now - lastVerifyRef.current.time) < 30000 &&
+      currentUser
+    ) {
+      return true;
+    }
     
     setLoading(true);
     try {
       const response = await verifyToken(token);
       if (response.status === 'success' && response.data) {
         setCurrentUser(response.data);
+        // Update cache timestamp
+        lastVerifyRef.current = { token, time: now };
         return true;
       } else {
         clearSession();
@@ -75,7 +94,7 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [token, clearSession]);
+  }, [token, clearSession, currentUser]);
 
   // Ensure session is loaded
   const ensureLoaded = useCallback(async () => {
@@ -96,6 +115,8 @@ export function AuthProvider({ children }) {
       if (response.status === 'success' && response.data) {
         setCurrentUser(response.data);
         setToken(response.data.token);
+        // Update cache verify timestamp
+        lastVerifyRef.current = { token: response.data.token, time: Date.now() };
         return response.data;
       } else {
         throw new Error(response.message || 'Login gagal');
@@ -157,6 +178,9 @@ export function AuthProvider({ children }) {
           // Token expired or invalid
           clearSession();
           navigate('/login', { replace: true });
+        } else {
+          // Update cache timestamp
+          lastVerifyRef.current = { token, time: Date.now() };
         }
       } catch (err) {
         // Network errors or temporary issues - don't logout immediately

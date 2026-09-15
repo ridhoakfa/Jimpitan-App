@@ -29,7 +29,6 @@ export default function DashboardPetugas() {
     setError(null);
     try {
       const result = await getUnpaidToday(token);
-      console.log('📊 Response getUnpaidToday:', result);
       
       if (result.status === 'success') {
         setData(result.data);
@@ -38,7 +37,6 @@ export default function DashboardPetugas() {
         toast.error(result.message || 'Gagal memuat data');
       }
     } catch (err) {
-      console.error('❌ Error loadData:', err);
       setError('Terjadi kesalahan saat memuat data: ' + err.message);
       toast.error('Terjadi kesalahan saat memuat data');
     } finally {
@@ -46,13 +44,14 @@ export default function DashboardPetugas() {
     }
   };
 
-  // Auto-refresh setiap 30 detik
+  // Auto-refresh setiap 3 menit (180 detik)
+  // Dari 30 detik → 3 menit untuk hindari server overload
   useEffect(() => {
     const interval = setInterval(() => {
       if (!loading && token) {
         loadData();
       }
-    }, 30000);
+    }, 180000); // 180 detik = 3 menit
     return () => clearInterval(interval);
   }, [loading, token]);
 
@@ -251,7 +250,7 @@ export default function DashboardPetugas() {
 
       {/* Info refresh otomatis */}
       <div className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500">
-        Data otomatis diperbarui setiap 30 detik
+        Data otomatis diperbarui setiap 3 menit
       </div>
     </div>
   );
