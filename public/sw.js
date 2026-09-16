@@ -1,6 +1,10 @@
 // Service Worker for Jimpitan App PWA
-const CACHE_NAME = 'jimpitan-v1.0.0';
-const RUNTIME_CACHE = 'jimpitan-runtime';
+// ==========================================================
+// VERSI: Bump ini setiap deploy untuk paksa client update!
+// ==========================================================
+const CACHE_VERSION = 'v1.1.0';
+const CACHE_NAME = `jimpitan-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `jimpitan-runtime-${CACHE_VERSION}`;
 
 // Assets to cache on install
 const PRECACHE_URLS = [
@@ -13,25 +17,26 @@ const PRECACHE_URLS = [
 
 // Install event - precache essential files
 self.addEventListener('install', (event) => {
-  console.log('[SW] Install event');
+  console.log('[SW] Install event - version', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[SW] Pre-caching app shell');
         return cache.addAll(PRECACHE_URLS);
       })
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()) // Aktifkan SW baru segera
   );
 });
 
-// Activate event - cleanup old caches
+// Activate event - cleanup ALL old caches & notify clients
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activate event');
+  console.log('[SW] Activate event - version', CACHE_VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
           .filter((cacheName) => {
+            // Hapus SEMUA cache yang bukan versi ini
             return cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE;
           })
           .map((cacheName) => {
@@ -39,11 +44,23 @@ self.addEventListener('activate', (event) => {
             return caches.delete(cacheName);
           })
       );
-    }).then(() => self.clients.claim())
+    })
+    .then(() => self.clients.claim())
+    .then(() => {
+      // ==========================================================
+      // AUTO-RELOAD: Beritahu semua client untuk reload
+      // agar langsung dapat versi terbaru
+      // ==========================================================
+      return self.clients.matchAll({ type: 'window' }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+        });
+      });
+    })
   );
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -58,12 +75,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // ==========================================================
+  // FIX: Handle accept header yang mungkin null
+  // ==========================================================
+  const acceptHeader = request.headers.get('accept') || '';
+  const isHTML = acceptHeader.includes('text/html');
+
   // Network first strategy for HTML
-  if (request.headers.get('accept').includes('text/html')) {
+  if (isHTML) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clone and cache the response
           const responseClone = response.clone();
           caches.open(RUNTIME_CACHE).then((cache) => {
             cache.put(request, responseClone);
@@ -71,7 +98,6 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Fallback to cache
           return caches.match(request).then((cachedResponse) => {
             return cachedResponse || caches.match('/index.html');
           });
@@ -80,27 +106,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache first strategy for static assets
+  // ==========================================================
+  // STALE-WHILE-REVALIDATE untuk JS/CSS/asset
+  // Serve dari cache (cepat), tapi update di background
+  // ==========================================================
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(request).then((response) => {
-        // Don't cache non-successful responses
-        if (!response || response.status !== 200 || response.type === 'error') {
-          return response;
-        }
-
-        // Clone and cache the response
-        const responseClone = response.clone();
-        caches.open(RUNTIME_CACHE).then((cache) => {
-          cache.put(request, responseClone);
+      // Fetch fresh version di background
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type === 'error') {
+            return networkResponse;
+          }
+          // Update cache dengan versi terbaru
+          const responseClone = networkResponse.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return networkResponse;
+        })
+        .catch(() => {
+          // Network gagal - pakai cache lama (offline mode)
+          return cachedResponse;
         });
 
-        return response;
-      });
+      // Serve cache langsung (kalau ada), sambil update di background
+      return cachedResponse || fetchPromise;
     })
   );
 });
@@ -117,8 +148,14 @@ self.addEventListener('message', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => caches.delete(cacheName))
         );
+      }).then(() => {
+        console.log('[SW] All caches cleared');
       })
     );
+  }
+
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: CACHE_VERSION });
   }
 });
 
@@ -130,27 +167,21 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncTransactions() {
-  // TODO: Implement offline transaction sync
   console.log('[SW] Syncing offline transactions');
 }
 
-// Push notification support (future feature)
+// Push notification support
 self.addEventListener('push', (event) => {
-  // Push payload may be JSON or plain text. Be defensive and handle both.
   let data = {};
 
   if (event.data) {
     try {
-      // Prefer structured JSON payload
       data = event.data.json();
     } catch (err) {
-      // Not valid JSON: fallback to raw text
       try {
         const raw = (typeof event.data.text === 'function') ? event.data.text() : String(event.data);
-        // Try parse text as JSON in case it's a JSON string
         data = JSON.parse(raw);
       } catch (e) {
-        // Final fallback -> use raw text as body
         const raw = (typeof event.data.text === 'function') ? event.data.text() : String(event.data);
         data = { title: 'Jimpitan App', body: raw, url: '/' };
       }

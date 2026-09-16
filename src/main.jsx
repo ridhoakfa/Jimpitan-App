@@ -20,6 +20,33 @@ window.addEventListener('unhandledrejection', (event) => {
   // Promise rejection handling without console output
 });
 
+// ==========================================================
+// SERVICE WORKER UPDATE LISTENER
+// Auto-reload saat ada versi baru agar user langsung dapat
+// update (fix bug yang lama)
+// ==========================================================
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  // Listen message dari SW
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SW_UPDATED') {
+      console.log('[App] SW updated to version:', event.data.version);
+      // Reload halaman setelah 1 detik agar update diterapkan
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  });
+
+  // Listen SW controller change (SW baru ambil alih)
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    console.log('[App] New SW controller, reloading...');
+    window.location.reload();
+  });
+}
+
 // Setup security measures
 setupConsoleSecurity();
 setupNetworkSecurity();
@@ -40,11 +67,9 @@ setupInstallPrompt();
 // Setup network status listeners
 setupNetworkListeners(
   () => {
-    // Online callback
     console.log('[App] Network: Online');
   },
   () => {
-    // Offline callback
     console.log('[App] Network: Offline');
   }
 );
