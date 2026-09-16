@@ -2,7 +2,7 @@
 // ==========================================================
 // VERSI: Bump ini setiap deploy untuk paksa client update!
 // ==========================================================
-const CACHE_VERSION = 'v1.1.0';
+const CACHE_VERSION = 'v1.1.1';
 const CACHE_NAME = `jimpitan-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `jimpitan-runtime-${CACHE_VERSION}`;
 
