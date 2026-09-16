@@ -45,7 +45,6 @@ export default function DashboardPetugas() {
   };
 
   // Auto-refresh setiap 3 menit (180 detik)
-  // Dari 30 detik → 3 menit untuk hindari server overload
   useEffect(() => {
     const interval = setInterval(() => {
       if (!loading && token) {
@@ -76,7 +75,12 @@ export default function DashboardPetugas() {
     String(c.blok).includes(search)
   );
 
-  const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  // ==========================================================
+  // PERBAIKAN: Array dayNames di-index cocok dengan data.day
+  // Backend: 1=Senin, 2=Selasa, ..., 6=Sabtu, 7=Minggu
+  // Index 0 sengaja dikosongkan karena tidak ada "hari 0"
+  // ==========================================================
+  const dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
   if (loading) {
     return (
@@ -121,7 +125,7 @@ export default function DashboardPetugas() {
             {data && (
               <div className="flex flex-wrap gap-3 mt-2 text-sm">
                 <span className="bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full text-blue-700 dark:text-blue-300">
-                  {dayNames[data.day - 1]}, {data.date}
+                  {dayNames[data.day]}, {data.date}
                 </span>
                 <span className="bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full text-red-700 dark:text-red-300">
                   Belum setor: {totalUnpaid} rumah
@@ -225,7 +229,6 @@ export default function DashboardPetugas() {
                     RT {cust.blok}
                   </p>
                 </div>
-                {/* Badge status dengan warna sesuai */}
                 {cust.paid ? (
                   <span className="inline-block px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">
                     ✅ Sudah

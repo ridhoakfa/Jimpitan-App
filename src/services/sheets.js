@@ -8,8 +8,10 @@ if (!SCRIPT_URL) {
   console.warn('VITE_SCRIPT_URL tidak di-set. Pastikan file .env memiliki VITE_SCRIPT_URL');
 }
 
-// Timeout 30 detik
-const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 30000;
+// ==========================================================
+// TIMEOUT 45 detik (toleransi cold start Apps Script)
+// ==========================================================
+const JSONP_TIMEOUT_MS = Number(import.meta.env.VITE_JSONP_TIMEOUT_MS) || 45000;
 
 // Global token invalid handler
 let tokenInvalidHandler = null;
@@ -25,6 +27,19 @@ function handleTokenInvalid() {
 }
 
 // ==========================================================
+// DAFTAR ACTION YANG DI-CACHE (client-side)
+// ==========================================================
+const CACHEABLE_ACTIONS = [
+  "getUsers",
+  "getCustomers",
+  "getHistory",
+  "getCustomerHistory",
+  "getUserActivity",
+  "getUserTransactions",
+  "getUnpaidToday", // ✅ cache 30 detik agar dashboard tidak spam backend
+];
+
+// ==========================================================
 // HELPER FUNCTION FOR JSONP WITH QUEUE & CACHE
 // ==========================================================
 
@@ -33,17 +48,7 @@ function createJSONPRequest(action, params = {}, useCache = true) {
   const cacheKey = `${action}_${JSON.stringify(params)}`;
 
   // Check cache first for GET operations
-  if (
-    useCache &&
-    [
-      "getUsers",
-      "getCustomers",
-      "getHistory",
-      "getCustomerHistory",
-      "getUserActivity",
-      "getUserTransactions",
-    ].includes(action)
-  ) {
+  if (useCache && CACHEABLE_ACTIONS.includes(action)) {
     const cached = requestCache.get(cacheKey);
     if (cached) {
       return Promise.resolve(cached);
@@ -52,7 +57,7 @@ function createJSONPRequest(action, params = {}, useCache = true) {
 
   // Deduplicate: kalau request sama sedang jalan, tunggu yang itu
   const dedupeKey = `${action}_${JSON.stringify(params)}`;
-  
+
   return deduplicatedRequest(dedupeKey, () => requestQueue.add(() =>
     measureAsync(`API-${action}`, () =>
       retryWithBackoff(
@@ -63,23 +68,31 @@ function createJSONPRequest(action, params = {}, useCache = true) {
               .toString(36)
               .substr(2, 9)}`;
 
+            let isResolved = false;
+
             const timeoutId = setTimeout(() => {
+              if (isResolved) return;
+              isResolved = true;
               if (window[callbackName]) {
                 delete window[callbackName];
-                if (script.parentNode) {
-                  document.body.removeChild(script);
-                }
-                const duration = performance.now() - startTime;
-                apiMetrics.track(action, duration, false);
-                reject(new Error("Request timeout."));
               }
+              const scriptEl = document.getElementById(`jsonp_${callbackName}`);
+              if (scriptEl && scriptEl.parentNode) {
+                document.body.removeChild(scriptEl);
+              }
+              const duration = performance.now() - startTime;
+              apiMetrics.track(action, duration, false);
+              reject(new Error("Server sedang sibuk. Silakan coba lagi dalam beberapa detik."));
             }, JSONP_TIMEOUT_MS);
 
             window[callbackName] = (data) => {
+              if (isResolved) return;
+              isResolved = true;
               clearTimeout(timeoutId);
               delete window[callbackName];
-              if (script.parentNode) {
-                document.body.removeChild(script);
+              const scriptEl = document.getElementById(`jsonp_${callbackName}`);
+              if (scriptEl && scriptEl.parentNode) {
+                document.body.removeChild(scriptEl);
               }
 
               const duration = performance.now() - startTime;
@@ -101,18 +114,10 @@ function createJSONPRequest(action, params = {}, useCache = true) {
                 reject(new Error(errorMsg));
               } else if (data) {
                 apiMetrics.track(action, duration, true);
-                if (
-                  useCache &&
-                  [
-                    "getUsers",
-                    "getCustomers",
-                    "getHistory",
-                    "getCustomerHistory",
-                    "getUserActivity",
-                    "getUserTransactions",
-                  ].includes(action)
-                ) {
-                  requestCache.set(cacheKey, data);
+                if (useCache && CACHEABLE_ACTIONS.includes(action)) {
+                  // Cache getUnpaidToday hanya 30 detik (data dinamis)
+                  const ttl = action === 'getUnpaidToday' ? 30000 : undefined;
+                  requestCache.set(cacheKey, data, ttl);
                 }
                 resolve(data);
               } else {
@@ -122,6 +127,7 @@ function createJSONPRequest(action, params = {}, useCache = true) {
             };
 
             const script = document.createElement("script");
+            script.id = `jsonp_${callbackName}`;
             const queryParams = new URLSearchParams({
               action,
               callback: callbackName,
@@ -131,6 +137,8 @@ function createJSONPRequest(action, params = {}, useCache = true) {
             script.async = true;
 
             script.onerror = () => {
+              if (isResolved) return;
+              isResolved = true;
               clearTimeout(timeoutId);
               delete window[callbackName];
               if (script.parentNode) {
@@ -138,13 +146,13 @@ function createJSONPRequest(action, params = {}, useCache = true) {
               }
               const duration = performance.now() - startTime;
               apiMetrics.track(action, duration, false);
-              reject(new Error("Network error."));
+              reject(new Error("Koneksi ke server gagal. Periksa jaringan internet Anda."));
             };
 
             document.body.appendChild(script);
           });
         },
-        1, // Retry 1x saja
+        1, // Retry 1x saja (1 attempt)
         600 // Delay 600ms
       )
     )
@@ -645,7 +653,8 @@ export async function importUsersFromSheet(token, users) {
 
 export async function getUnpaidToday(token) {
   try {
-    const response = await createJSONPRequest('getUnpaidToday', { token }, false);
+    // ✅ Sekarang pakai cache (30 detik via CACHEABLE_ACTIONS)
+    const response = await createJSONPRequest('getUnpaidToday', { token }, true);
     return response;
   } catch (error) {
     throw error;
